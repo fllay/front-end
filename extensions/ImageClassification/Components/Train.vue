@@ -61,7 +61,6 @@ export default {
     return {
       file: null,
       isDownloading : false,
-      url : ""
     };
   },
   methods: {
