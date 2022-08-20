@@ -1,3 +1,4 @@
+import axios from "axios";
 export const state = () => ({
   project: {
     name: "",
@@ -9,6 +10,8 @@ export const state = () => ({
     labels: [],
     model: null,
     options: {}, // ค่าจาก config options ของโปรเจค
+    code: "",
+    workspace: "",
   },
   projects: [],
   isLoading: false,
@@ -51,6 +54,12 @@ export const mutations = {
   saveModel(state, model) {
     state.project.model = model;
   },
+  saveCode(state, code) {
+    state.project.code = code;
+  },
+  saveWorkspace(state, ws) {
+    state.project.workspace = ws;
+  },
 };
 export const getters = {
   getLabels: (state) => {
@@ -80,10 +89,26 @@ export const actions = {
     context.commit("setProject", project);
   },
 
-  async fetchProjects(context) {
+  async fetchProjects({ commit, rootState }) {
     // fetch project
-    let projects = [];
-    context.commit("setProjects", projects);
+    try {
+      const res = await axios.get(rootState.serverUrl + "list_project");
+      if (res && res.data.result && res.data.result == "OK") {
+        console.log("project list = ");
+        console.log(res.data.projects);
+        // if (Object.keys(res.data.data).length != 0) {
+        //   commit("setCurrentWifi", res.data.data);
+        // } else {
+        //   commit("setCurrentWifi", null);
+        // }
+        // let projects = [];
+        // commit("setProjects", projects);
+        return res.data.projects;
+      }
+    } catch (err) {
+      console.log("list project failed ", err);
+      return [];
+    }
   },
   async saveProject(context) {},
   async deleteProject(context, project) {},

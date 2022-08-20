@@ -5,7 +5,7 @@
         <b-button class="btn-create" variant="primary" @click="openColab">Create</b-button>
       </b-input-group-prepend>
       <b-form-input
-        :value="url"
+        :value="currentDevice == 'ROBOT' ? serverUrl : url"
         @change="connectServer"
         placeholder="Put Google Colab URL here . . ."
       ></b-form-input>
@@ -20,7 +20,7 @@
         </b-button>
         <b-button class="btn base-btn" :disabled="!isTrained || isConverting" @click="downloadModel">
           <b-spinner v-if="isConverting" small></b-spinner>
-          {{isConverting? "Converting...":"Download"}}
+          {{isConverting? "Converting...": (currentDevice == 'ROBOT' ? "Convert" : "Download")}}
         </b-button>
       </b-input-group-append>
     </b-input-group>
@@ -110,6 +110,7 @@ export default {
     
   },
   computed: {
+    ...mapState(["currentDevice","serverUrl"]),
     ...mapState("server",["url","isConnected","isTraining","isTerminating","isTrained","isConverting","isConverted"]),
     downloadable: function() {
       return this.isDone && !this.isDownloading;

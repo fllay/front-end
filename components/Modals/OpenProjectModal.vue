@@ -5,7 +5,7 @@
       @show="fetchProject"
       @hidden="clearForm"
       @ok="openProjectHandle"
-      :ok-disabled="!projectState || files == null || files.length == 0"
+      :ok-disabled="!projectState"
     >
       <div v-if="currentDevice == 'ROBOT'">
         <form @submit.stop.prevent="">
@@ -19,6 +19,12 @@
           </b-form-group>
         </form>
         <p class="p-notice-color small">* เลือกโปรเจคที่ต้องการเปิด</p>
+        <b-form-select
+          id="project-id"
+          v-model="projectToOpen"
+          :options="projectByType"
+          required
+        ></b-form-select>
       </div>
       <div v-else-if="currentDevice == 'BROWSER' && step == 1">
         <b-row class="mb-4">
@@ -75,15 +81,25 @@ export default {
     ...mapState(["currentDevice","isSaving","isOpening"]),
     projectState() {
       if(this.currentDevice == "BROWSER"){
-        return this.step >= 3 || this.step == 1;
+        return (this.step >= 3 || this.step == 1) && this.files && this.files.length > 0;
       }else if(this.currentDevice == "ROBOT"){
-        return this.projectToOpen ? true : false
+        return (this.step >= 3 || this.step == 1) && this.projectToOpen;
+      }
+    },
+    projectByType(){
+      let filtered = this.projectList.filter(el=>el.projectType==this.selectType);
+      if(filtered.length > 0){
+        return filtered.map(el=>({text:el.name, value: el.id}));
+      }else{
+        this.projectToOpen = null;
+        return null;
       }
     }
   },
   methods : {
     ...mapMutations("project",["setProject"]),
     ...mapActions("dataset",["addFileToFs","clearDataset","restoreDataset"]),
+    ...mapActions("project",["fetchProjects"]),
     clearForm(){
       this.selectType = null;
       this.projectToOpen = null;
@@ -93,9 +109,9 @@ export default {
       this.step = 1;
       this.progress = 0;
     },
-    fetchProject(){
+    async fetchProject(){
       if(this.currentDevice == "ROBOT"){
-        //call service to open project
+        this.projectList = await this.fetchProjects();
       }
     },
     async openProjectHandle(e){
@@ -125,6 +141,14 @@ export default {
         this.setProject(projectJson.project.project); //assign new dataset
         this.step = 3;
         this.$toast.success("เปิดโปรเจคและนำเข้าเสร็จเรียบร้อย");
+      }else if(this.step == 3){
+        //import success 
+      }
+    },
+    async openLocalProject(){
+      if(this.step == 1){ //selecting file
+        e.preventDefault();
+
       }else if(this.step == 3){
         //import success 
       }

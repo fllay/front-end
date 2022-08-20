@@ -1,14 +1,17 @@
 import JSZip from "jszip";
 import axios from "axios";
 
-const isLocalHost =
-  location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const robotIp =
+  location.hostname === "192.168.2.1" ||
+  location.hostname === "localhost" ||
+  location.hostname.startsWith("192.168.") ||
+  location.hostname.startsWith("10.0.");
 
 export const state = () => ({
-  initialDevice: isLocalHost ? "ROBOT" : "BROWSER",
-  currentDevice: isLocalHost ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
-  serverUrl: "http://192.168.1.87:5000/",
-  streamUrl: "http://192.168.1.87:8080/stream",
+  initialDevice: robotIp ? "ROBOT" : "BROWSER",
+  currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
+  serverUrl: "http://192.168.1.101:5000/",
+  streamUrl: "http://192.168.1.101:8080/stream",
   currentWifi: null,
   isRunning: false,
   selectedMenu: 0,
@@ -95,6 +98,7 @@ export const actions = {
       zip
         .generateAsync({
           type: "blob",
+          compression: "STORE",
         })
         .then(function (content) {
           that.$helper.downloadBlob("project.zip", content);

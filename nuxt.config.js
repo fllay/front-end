@@ -20,7 +20,13 @@ export default {
         href: "https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600;800&family=Sarabun:wght@200;400;600;800&display=swap",
       },
     ],
-    script: [{ src: "js/WebAudioRecorder.js", type: "text/javascript" }],
+    script: [
+      { src: "js/WebAudioRecorder.js", type: "text/javascript" },
+      {
+        src: "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js",
+        type: "text/javascript",
+      },
+    ],
   },
   css: ["~/assets/css/styles.scss"],
   plugins: [

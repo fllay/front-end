@@ -164,7 +164,9 @@ export default {
   },
   methods: {
     async run(){
-
+      let code = blocklyPython.workspaceToCode(this.blockly_woakspace);
+      console.log(code);
+      this.$toast.success("Running code");
     },
     async stop(){
 
