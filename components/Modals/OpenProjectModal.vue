@@ -20,6 +20,7 @@
         </form>
         <p class="p-notice-color small">* เลือกโปรเจคที่ต้องการเปิด</p>
         <b-form-select
+          v-if="projectByType"
           id="project-id"
           v-model="projectToOpen"
           :options="projectByType"
@@ -50,7 +51,8 @@
               stroke-width="24"
               :width="200"
         >
-          <h4 v-if="step == 2" class="my-3" text-black>กำลังนำเข้า ... {{progress}}/{{files.length || ""}}</h4>
+          <h4 v-if="step == 2 && currentDevice=='BROWSER'" class="my-3" text-black>กำลังนำเข้า ... {{progress}}/{{files.length || ""}}</h4>
+          <h4 v-if="step == 2 && currentDevice=='ROBOT'" class="my-3" text-black>กำลังนำเข้า ... {{progress}}/{{serverFileLength}}</h4>
           <h4 v-else-if="step == 3" class="my-3" text-black>นำเข้าสำเร็จ</h4>
           <!-- <h4 class="my-3" text-black>กำลังบันทึก ... {{progress.toFixed(2)}}%</h4> -->
         </vm-progress>
@@ -58,6 +60,7 @@
     </b-modal>
 </template>
 <script>
+import axios from 'axios';
 import { mapState, mapActions, mapMutations  } from 'vuex';
 export default {
   data(){
@@ -73,12 +76,13 @@ export default {
       step: 1, //1= select folder , 2 = importing, 3 = import success
       progress : 0,
       percentage : 0,
+      serverFileLength: 0,
     };
   },
   created(){
   },
   computed: {
-    ...mapState(["currentDevice","isSaving","isOpening"]),
+    ...mapState(["currentDevice","isSaving","isOpening","serverUrl"]),
     projectState() {
       if(this.currentDevice == "BROWSER"){
         return (this.step >= 3 || this.step == 1) && this.files && this.files.length > 0;
@@ -106,6 +110,7 @@ export default {
       this.projectList = [];
 
       this.files = [];
+      this.serverFileLength = 0;
       this.step = 1;
       this.progress = 0;
     },
@@ -114,43 +119,82 @@ export default {
         this.projectList = await this.fetchProjects();
       }
     },
-    async openProjectHandle(e){
-      if(this.step == 1){ //selecting file
-        e.preventDefault();
-        this.step = 2;
-        this.progress = 0;
-        let projectFile = this.files.find(el=>el.name == "project.json");
-        if(!projectFile){
-          this.step = 1;
-          this.$toast.error("Folder ที่เลือกไม่พบโปรเจคไฟล์");
-          return false;
-        }
-        // parse project file
-        let files = this.files.filter(el=>el.name != projectFile.name);
-        let projectJsonText = await this.$helper.readFile(projectFile);
-        let projectJson = JSON.parse(projectJsonText);
-        let projectId = projectJson.project.project.id;
-        await this.clearDataset(); //clear old dataset file
-        console.log("cleared");
-        for(let file of files){
-          this.progress+=1;
-          this.percentage= Math.round(this.progress/files.length*100);
-          await this.addFileToFs({projectId : projectId, file : file});
-        }
-        this.restoreDataset(projectJson.dataset.dataset);
-        this.setProject(projectJson.project.project); //assign new dataset
-        this.step = 3;
-        this.$toast.success("เปิดโปรเจคและนำเข้าเสร็จเรียบร้อย");
-      }else if(this.step == 3){
-        //import success 
-      }
+    async getServerFile(filename){
+      let fileContent = await axios.get(`${this.serverUrl}/projects/${this.projectToOpen}/raw_dataset/${filename}` ,{ responseType: 'blob' });
+      return new File([fileContent.data], filename);
     },
-    async openLocalProject(){
-      if(this.step == 1){ //selecting file
-        e.preventDefault();
-
-      }else if(this.step == 3){
-        //import success 
+    async openProjectHandle(e){
+      if(this.currentDevice == "BROWSER"){
+        if(this.step == 1){ //selecting file
+          e.preventDefault();
+          this.step = 2;
+          this.progress = 0;
+          let projectFile = this.files.find(el=>el.name == "project.json");
+          if(!projectFile){
+            this.step = 1;
+            this.$toast.error("Folder ที่เลือกไม่พบโปรเจคไฟล์");
+            return false;
+          }
+          // parse project file
+          let files = this.files.filter(el=>el.name != projectFile.name);
+          let projectJsonText = await this.$helper.readFile(projectFile);
+          let projectJson = JSON.parse(projectJsonText);
+          let projectId = projectJson.project.project.id;
+          await this.clearDataset(); //clear old dataset file
+          console.log("cleared");
+          for(let file of files){
+            this.progress+=1;
+            this.percentage= Math.round(this.progress/files.length*100);
+            await this.addFileToFs({projectId : projectId, file : file});
+          }
+          this.restoreDataset(projectJson.dataset.dataset);
+          this.setProject(projectJson.project.project); //assign new dataset
+          this.step = 3;
+          this.$toast.success("เปิดโปรเจคและนำเข้าเสร็จเรียบร้อย");
+        }else if(this.step == 3){
+          //import success 
+        }
+      }else if(this.currentDevice == "ROBOT"){
+        if(this.step == 1){ //selecting file
+          e.preventDefault();
+          this.step = 2;
+          this.progress = 0;
+          let projectFile = await axios.get(`${this.serverUrl}/projects/${this.projectToOpen}/project.json`);
+          if(projectFile && projectFile.status != 200){
+            this.step = 1;
+            this.$toast.error("ไม่พบโปรเจคไฟล์");
+            return false;
+          }
+          // parse project file
+          let projectJson = projectFile.data;
+          let projectId = projectJson.project.project.id;
+          await this.clearDataset(); //clear old dataset file
+          console.log("cleared");
+          let files = projectJson.dataset.dataset.data;//  this.files.filter(el=>el.name != projectFile.name);
+          this.serverFileLength = files.length;
+          for(let data of files){
+            this.progress+=1;
+            this.percentage= Math.round(this.progress/files.length*100);
+            if(projectJson.project.project.projectType == "VOICE_CLASSIFICATION"){
+              let file = await this.getServerFile(`${data.id}.${data.ext}`);
+              await this.addFileToFs({projectId : projectId, file : file});
+              let fileMfcc = await this.getServerFile(`${data.id}_mfcc.jpg`);
+              await this.addFileToFs({projectId : projectId, file : fileMfcc});
+              let fileSound = await this.getServerFile(`${data.id}.${data.sound_ext}`);
+              await this.addFileToFs({projectId : projectId, file : fileSound});
+            }else{
+              let file = await this.getServerFile(`${data.id}.${data.ext}`);
+              console.log(file);
+              await this.addFileToFs({projectId : projectId, file : file});
+            }
+          }
+          this.restoreDataset(projectJson.dataset.dataset);
+          this.setProject(projectJson.project.project); //assign new dataset
+          this.step = 3;
+          this.$toast.success("เปิดโปรเจคและนำเข้าเสร็จเรียบร้อย");
+        }else if(this.step == 3){
+          //import success 
+        }
       }
     },
     async delay(time){

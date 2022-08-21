@@ -2,85 +2,29 @@
   <div class="blockly-module">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel">
-        <div
-          class="d-flex flex-fill flex-column"
-          style="background-color: white"
-        >
-          <div class="blockly" ref="blocklyDiv"></div>
+        <div class="d-flex flex-fill flex-column" style="background-color: white">
+          <blockly-code ref="blockly"></blockly-code>
         </div>
-        <div style="height: 200px">
-          <div
-            class="bg-secondary text-light px-3 py-2 scroll-box"
-            ref="logsBox"
-          >
-            <br />
-            <div v-html="result" />
-            <div v-html="logs" />
-          </div>
-        </div>
-      </div>
-
-      <div class="side-panel">
-        <div>
-          <div class="display-panel" v-show="!isExpanded && isRunning">
-            <p class="display-image">
-              <b-img ref="displayImage" src=""> </b-img>
-            </p>
-            <div class="control">
-              <b-form-checkbox
-                class="check"
-                v-model="nDisplay"
-                name="check-button"
-                switch
+        <div style="height: 200px; display: flex;">
+          <div style="width: 100%; height: 100%; padding: 5px; background-color: black;" id="terminal" ref="terminal"></div>
+          <div style="width: 200px; height: 100%;text-align: center;padding-top: 46px; background-color: black;">
+            <div class="button">
+              <button
+                pill
+                v-on:click="handleRun"
+                class="btn-run op-btn"
               >
-                Detector
-              </b-form-checkbox>
-              <img
-                src="~/assets/images/UI/svg/expad-arrows.svg"
-                height="20"
-                v-b-modal.expanded-camera
-              />
+                <span class="ico">
+                  <img v-if="!isRunning" src="~/assets/images/UI/svg/Group 80.svg" alt="" srcset=""/>
+                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" alt="" srcset=""/>
+                </span>
+              </button>
             </div>
           </div>
         </div>
-        <div class="buttom">
-          <button
-            v-if="!isRunning"
-            :disabled="isProjectLoaded"
-            pill
-            v-on:click="run"
-            class="btn-run op-btn"
-          >
-            <span class="ico"
-              ><img src="~/assets/images/UI/svg/Group 80.svg" alt="" srcset=""
-            /></span>
-          </button>
-
-          <!-- <button
-            v-if="!isRunning"
-            :disabled="isProjectLoaded"
-            pill
-            v-on:click="$emit('save-workspace')"
-            class="btn-run"
-            style="margin-left:10px;">
-            <span class="ico">
-              <img src="../assets/UI/svg/save.svg" alt="" srcset=""/>
-            </span>
-          </button> -->
-
-          <button
-            v-if="isRunning"
-            :disabled="!isProjectLoaded"
-            pill
-            v-on:click="stop"
-            class="btn-stop"
-          >
-            <span class="ico"
-              ><img src="~/assets/images/UI/svg/Group 82.svg" alt="" srcset=""
-            /></span>
-          </button>
-        </div>
       </div>
+
+      
       <b-modal
         id="expanded-camera"
         size="xl"
@@ -118,58 +62,34 @@
 </template>
 
 <script>
-/**
- * @license
- *
- * Copyright 2019 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import "xterm/css/xterm.css";
+import BlocklyCode from "@/components/BlocklyCode.vue";
 
-/**
- * @fileoverview Blockly Vue Component.
- * @author samelh@google.com (Sam El-Husseini)
- */
-
-import Blockly from "blockly";
-import blocklyPython from "blockly/python";
 import { mapState, mapActions, mapMutations , mapGetters } from "vuex";
 export default {
   name: "BlocklyComponent",
-  props: {
-    /*isRunHiden: Boolean,*/
-    isProjectLoaded: Boolean,
-    isRunning: Boolean,
+  components: {
+    BlocklyCode
   },
   data() {
     return {
-      blockly_woakspace: null,
-      blockly_xml: "",
-      nDisplay: false,
-      result: "",
+      isRunning : false,
       logs: "",
       s_result: "",
-      isExpanded: false,
+      term: null,
+      ndisplay: false,
     };
   },
   methods: {
+    async handleRun(){
+
+    },
     async run(){
       let code = blocklyPython.workspaceToCode(this.blockly_woakspace);
       console.log(code);
       this.$toast.success("Running code");
-    },
-    async stop(){
-
     },
     setExpanded: function (value) {
       if (value) {
@@ -229,462 +149,13 @@ export default {
   },
 
   mounted() {
-    const base_blocks = `<xml ref="toolbox" style="display: none">
-      <category name="Logic" colour="%{BKY_LOGIC_HUE}">
-      <category name="If">
-        <block type="controls_if"></block>
-        <block type="controls_if">
-          <mutation else="1"></mutation>
-        </block>
-        <block type="controls_if">
-          <mutation elseif="1" else="1"></mutation>
-        </block>
-      </category>
-      <category name="Boolean" colour="%{BKY_LOGIC_HUE}">
-        <block type="logic_compare"></block>
-        <block type="logic_operation"></block>
-        <block type="logic_negate"></block>
-        <block type="logic_boolean"></block>
-        <block type="logic_null"></block>
-        <block type="logic_ternary"></block>
-      </category>
-    </category>
-    <category name="Loops" colour="%{BKY_LOOPS_HUE}">
-      <block type="controls_repeat_ext">
-        <value name="TIMES">
-          <block type="math_number">
-            <field name="NUM">10</field>
-          </block>
-        </value>
-      </block>
-      <block type="controls_whileUntil"></block>
-      <block type="controls_for">
-        <field name="VAR">i</field>
-        <value name="FROM">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="TO">
-          <block type="math_number">
-            <field name="NUM">10</field>
-          </block>
-        </value>
-        <value name="BY">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-      </block>
-      <block type="controls_forEach"></block>
-      <block type="controls_flow_statements"></block>
-    </category>
-    <category name="Math" colour="%{BKY_MATH_HUE}">
-      <block type="math_number">
-        <field name="NUM">123</field>
-      </block>
-      <block type="math_arithmetic"></block>
-      <block type="math_single"></block>
-      <block type="math_trig"></block>
-      <block type="math_constant"></block>
-      <block type="math_number_property"></block>
-      <block type="math_round"></block>
-      <block type="math_on_list"></block>
-      <block type="math_modulo"></block>
-      <block type="math_constrain">
-        <value name="LOW">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="HIGH">
-          <block type="math_number">
-            <field name="NUM">100</field>
-          </block>
-        </value>
-      </block>
-      <block type="math_random_int">
-        <value name="FROM">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="TO">
-          <block type="math_number">
-            <field name="NUM">100</field>
-          </block>
-        </value>
-      </block>
-      <block type="math_random_float"></block>
-      <block type="math_atan2"></block>
-    </category>
-    <category name="Text" colour="%{BKY_TEXTS_HUE}">
-    <block type="text"></block>
-    <block type="text_length"></block>
-    <block type="text_print"></block>
-</category>
-    <category name="Lists" colour="%{BKY_LISTS_HUE}">
-      <block type="lists_create_empty"></block>
-      <block type="lists_create_with"></block>
-      <block type="lists_repeat">
-        <value name="NUM">
-          <block type="math_number">
-            <field name="NUM">5</field>
-          </block>
-        </value>
-      </block>
-      <block type="lists_length"></block>
-      <block type="lists_isEmpty"></block>
-      <block type="lists_indexOf"></block>
-      <block type="lists_getIndex"></block>
-      <block type="lists_setIndex"></block>
-    </category>
-    <sep></sep>
-    <category name="Variables" custom="VARIABLE" colour="%{BKY_VARIABLES_HUE}">
-    </category>
-    <category name="Functions" custom="PROCEDURE" colour="%{BKY_PROCEDURES_HUE}">
-    </category>
-    <sep></sep>
-      
-      <category name="KidBright AI" colour="%{BKY_VARIABLES_HUE}">
-      <block type="init_ros_node"></block>
-      <block type="start_object_detector"></block>
-      <block type="start_image_classification"></block>
-      <block type="start_wake_word_detector"></block>
-      <block type="rospy_loop"></block>
-      <block type="get_objects"></block>
-      <block type="get_classes"></block>
-      <block type="get_sound"></block>
+    this.term = new Terminal({ cursorBlink: true });        
+    const fitAddon = new FitAddon();
+    this.term.loadAddon(fitAddon);
+    this.term.open(this.$refs.terminal);
+    this.term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+    fitAddon.fit();
 
-      <block type="get_object_attr"></block>
-      <block type="set_velocity"></block>
-      <block type="delay"></block>
-  </category>
-
-  </xml>`;
-
-    Blockly.Python["start_object_detector"] = function (block) {
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_feature' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu tpu_detect.py " +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["start_image_classification"] = function (block) {
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_class' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu tpu_classify.py " +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["start_wake_word_detector"] = function (block) {
-      var dur = this.$store.getters.getProjDescription
-      //console.log("==========> Duraion is =======>");
-      //console.log(dur.Duration*4);
-      var nf = dur.Duration*4
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/wake_class_wait' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu wakeword_classify.py " +
-        "_terminate:=False "  +
-        "_model:=" +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "/audios/model.h5 " + 
-        "label_file:=" +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "/audios/label_map.pkl " +
-        "_nframe:=" + 
-        nf.toString() +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["init_ros_node"] = function (block) {
-      var code =
-        "from geometry_msgs.msg import Twist\nimport rospy\nimport time\nrospy.init_node('get_center', anonymous=True)\nvelocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=1)\nvel_msg = Twist()\n";
-
-      code =
-        code +
-        "import roslib\nimport rospy\nfrom kidbright_tpu.msg import tpu_object\nfrom kidbright_tpu.msg import tpu_objects\nfrom std_msgs.msg import String\n";
-      return code;
-    };
-
-    Blockly.Blocks["get_objects"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get objects");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_classes"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get classes");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_sound"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get sound");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["sumorobot_opponent"] = {
-      init: function () {
-        this.setColour("#0099E6");
-        this.appendDummyInput().appendField("opponent");
-        this.setOutput(true, "Boolean");
-      },
-    };
-
-    Blockly.Blocks["start_object_detector"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start object detector");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["start_image_classification"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start image classification");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["start_wake_word_detector"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start wake word detector");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["init_ros_node"] = {
-      init: function () {
-        this.appendDummyInput().appendField("ROS node initialization");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["rospy_loop"] = {
-      init: function () {
-        this.appendDummyInput().appendField("ROS LOOP");
-        this.appendStatementInput("DO")
-          .setCheck(null)
-          .setAlign(Blockly.ALIGN_RIGHT);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_object_attr"] = {
-      init: function () {
-        this.appendValueInput("VAR")
-          .setCheck(null)
-          .appendField("get")
-          .appendField(
-            new Blockly.FieldDropdown([
-              ["cx", "cx"],
-              ["cy", "cy"],
-              ["width", "width"],
-              ["height", "height"],
-              ["label", "label"],
-            ]),
-            "DATA_FIELD"
-          )
-          .appendField(" from");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["set_velocity"] = {
-      init: function () {
-        this.appendDummyInput().appendField("move with ");
-        this.appendDummyInput()
-          .appendField("linear velocity")
-          .appendField(new Blockly.FieldNumber(0), "LINEAR");
-        this.appendDummyInput()
-          .appendField("angular velocity")
-          .appendField(new Blockly.FieldNumber(0), "ANGULAR");
-        this.setInputsInline(true);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["delay"] = {
-      init: function () {
-        this.appendDummyInput().appendField("delay");
-        this.appendValueInput("NAME").setCheck(null);
-        this.setInputsInline(true);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Python["set_velocity"] = function (block) {
-      var number_linear = block.getFieldValue("LINEAR");
-      var number_angular = block.getFieldValue("ANGULAR");
-      var code =
-        "vel_msg.linear.y = 0\nvel_msg.linear.z = 0\nvel_msg.angular.x = 0\nvel_msg.angular.y = 0\n";
-      code =
-        code +
-        "vel_msg.linear.x = " +
-        number_linear +
-        "\n" +
-        "vel_msg.angular.z = " +
-        number_angular +
-        "\n";
-      code = code + "velocity_publisher.publish(vel_msg)\n";
-
-      return code;
-    };
-
-    Blockly.Python["get_object_attr"] = function (block) {
-      var dropdown_data_field = block.getFieldValue("DATA_FIELD");
-      var value_var = Blockly.Python.valueToCode(
-        block,
-        "VAR",
-        Blockly.Python.ORDER_ATOMIC
-      );
-      // TODO: Assemble Python into code variable.
-      console.log(block.getFieldValue("DATA_FIELD"));
-      var code = value_var + "." + block.getFieldValue("DATA_FIELD");
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["rospy_loop"] = function (block) {
-      var statements_name = Blockly.Python.statementToCode(block, "NAME");
-      // TODO: Assemble Python into code variable.
-      var branch = Blockly.Python.statementToCode(block, "DO");
-      branch = Blockly.Python.addLoopTrap(branch, block) || Blockly.Python.PASS;
-      var code = "while not rospy.is_shutdown():\n" + branch;
-      return code;
-    };
-
-    Blockly.Python["get_objects"] = function (block) {
-      var code =
-        "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["get_classes"] = function (block) {
-      // TODO: Assemble Python into code variable.
-      var code =
-        "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["get_sound"] = function (block) {
-      // TODO: Assemble Python into code variable.
-      var code =
-        "rospy.wait_for_message('/inference', String, timeout=4).data";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["delay"] = function (block) {
-      var value_name = Blockly.Python.valueToCode(
-        block,
-        "NAME",
-        Blockly.Python.ORDER_ATOMIC
-      );
-      // TODO: Assemble Python into code variable.
-      var code = "time.sleep(" + value_name + ")\n";
-      return code;
-    };
-
-    setTimeout(() => {
-      //alert("Hello blockly")
-      var tt = {};
-      tt.toolbox = base_blocks;
-      tt.scrollbars = true;
-      tt.css = true;
-      tt.zoom = {
-        controls: true,
-        wheel: true,
-        startScale: 1.0,
-        maxScale: 4,
-        minScale: 0.25,
-        scaleSpeed: 1.1,
-      };
-
-      var blckDiv = this.$refs["blocklyDiv"];
-      this.blockly_woakspace = Blockly.inject(this.$refs["blocklyDiv"], tt);
-      //>>>>>>>>>>>> this.$store.commit("setBlocklyWorkspace", this.blockly_woakspace);
-      console.log("Injection running ***********************************");
-      //console.log(this.blockly_woakspace)
-      this.loaded = true;
-    }, 500);
   },
   created() {
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
@@ -727,6 +198,19 @@ ul {
   list-style: none;
   padding: 0;
 }
+.button{
+  .btn-run {
+    img {
+      width: 100px;
+    }
+  }
+
+  .btn-stop {
+    img {
+      width: 100px;
+    }
+  }
+}
 
 .op-btn {
   transition: opacity 0.3s ease-in;
@@ -753,7 +237,8 @@ ul {
     height: 100%;
     width: 100%;
   }
-
+  
+  
   .side-panel {
     padding: 15px;
     position: absolute;

@@ -108,6 +108,45 @@ export const actions = {
         });
     } else if (state.currentDevice == "ROBOT") {
       //sync project instead
+      const res = await axios.post(
+        state.serverUrl + "/sync_project",
+        rootState
+      );
+      if (res.data && res.data.result && res.data.result == "OK") {
+        this.$toast.success("บันทึกโปรเจคเสร็จเรียบร้อย");
+        commit("setSaving", false);
+      } else if (res.data && res.data.result && res.data.result == "SYNC") {
+        //go to sync dataset
+        //commit("setSync", true);
+        let needed = res.data.needed;
+        await dispatch("syncProject", needed);
+        commit("setSaving", false);
+      }
+    }
+  },
+  async syncProject({ commit, dispatch, state, rootState }, request_file) {
+    const formData = new FormData();
+    for (let needed of request_file) {
+      let dataset_file = await dispatch("dataset/getDataAsFile", needed, {
+        root: true,
+      });
+      formData.append("dataset", dataset_file);
+    }
+    let project_id = rootState.project.project.id;
+    formData.append("project_id", project_id);
+    console.log("posting : ", state.serverUrl);
+    let res = await axios({
+      method: "POST",
+      url: state.serverUrl + "/upload",
+      data: formData,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (pg) =>
+        commit("setSavingProgress", (pg.loaded / pg.total) * 100),
+    });
+    if (res.data && res.data.result && res.data.result == "OK") {
+      return true;
     }
   },
   // async openProject(

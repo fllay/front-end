@@ -106,7 +106,14 @@ export default {
     },
   },
   directives: {},
-  mounted() {},
+  created(){
+    //console.log("created");
+  },
+  mounted() {
+    if(this.currentDevice == "ROBOT"){
+      this.connectServer(this.serverUrl);
+    }
+  },
   updated() {
     
   },
