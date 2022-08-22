@@ -74,11 +74,17 @@ export default {
     },
     downloadModel: async function(){
       let res = await this.convert_model();
-      if(res){
-        window.open(
-          this.url+ "/download_model?project_id=" + this.$store.state.project.project.id,
-          "_blank"
-        );
+      //this.$toast.success("Convert Model Finished!");
+      if(res && this.currentDevice == "BROWSER"){
+        let projectId = this.$store.state.project.project.id;
+        //let model_h5 = await axios.get(`${this.serverUrl}/projects/${projectId}/output/`);
+        window.open(`${this.url}/download_model?project_id=${projectId}`,"_blank");
+      }else if(res && this.currentDevice == "ROBOT" && !this.url.startsWith(this.serverUrl)){
+        let serverDownloadModel = await axios.post(`${this.serverUrl}/download_server_project`,
+        {
+          project_id : projectId,
+          url : this.url
+        });
       }
     },
     connectServer: function(url){

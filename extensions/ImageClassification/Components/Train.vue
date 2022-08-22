@@ -45,6 +45,7 @@ import MLModelDesigner from "~/components/MLModelDesign.vue";
 import SyncProjectModal from "~/components/Modals/SyncProjectModal.vue";
 import ServerReport from "~/components/ServerReport.vue";
 import InferenceModal from "../Modals/InferenceModal.vue";
+import axios from 'axios';
 
 export default {
   name: "Train",
@@ -76,10 +77,16 @@ export default {
       let res = await this.convert_model();
       //this.$toast.success("Convert Model Finished!");
       if(res && this.currentDevice == "BROWSER"){
-        window.open(
-          this.url+ "/download_model?project_id=" + this.$store.state.project.project.id,
-          "_blank"
-        );
+        let projectId = this.$store.state.project.project.id;
+        //let model_h5 = await axios.get(`${this.serverUrl}/projects/${projectId}/output/`);
+        window.open(`${this.url}/download_model?project_id=${projectId}`,"_blank");
+      }else if(res && this.currentDevice == "ROBOT" && !this.url.startsWith(this.serverUrl)){
+        let serverDownloadModel = await axios.post(`${this.serverUrl}/download_server_project`,
+        {
+          project_id : projectId,
+          url : this.url
+        });
+
       }
     },
     connectServer: function(url){
