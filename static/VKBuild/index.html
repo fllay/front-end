@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>VirtualKanomchan</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <script src="TemplateData/UnityProgress.javascript"></script>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        var gameInstance = UnityLoader.instantiate("gameContainer", "Build/VK Build.json", {onProgress: UnityProgress});
+    </script>
+</head>
+<body>
+<div class="webgl-content">
+    <div id="gameContainer" style="width: 1280px; height: 720px"></div>
+</div>
+<div class="simmer"><a href="https://simmer.io" target="_blank"></a></div>
+<details style="width: 50px; height: 50px; margin-left: 100px ;margin-top: 10px"> <summary>.</summary>
+<p id="ImgBase64">0</p>
+
+<p id="LinearDirec">0</p>
+<p id="AngularDirec">0</p>
+<p id="Capture">0</p>
+</details>
+<script src="TemplateData/responsive.javascript"></script>
+<script>
+    /*window.ReportReady=function(x,y){
+        window.top.dispatchEvent(new CustomEvent(x, {detail: y}))
+        send({id:1,value:2})
+    }*/
+    //var delay = 3000;
+    var x = 0
+
+    setTimeout(TimeDelay,3000);
+    setInterval(RunTime,1);
+    function TimeDelay()
+    {
+        //x = 1;
+        //delay = 99999999;
+    }
+    //Receive from VK
+    function VK_Run(value)
+    {
+        x = value;
+        if(value == 0){
+            document.getElementById("LinearDirec").innerHTML = 0;
+            document.getElementById("AngularDirec").innerHTML = 0;
+        }
+    }
+    function ImgStream(value)
+    {
+        document.getElementById("ImgBase64").innerHTML = value;
+    }
+    function ImageBase64()
+    {
+        return document.getElementById("ImgBase64").innerHTML;
+    }
+    function Capture(value)
+    {
+        return document.getElementById("Capture").innerHTML;
+    }
+    function VK_Capture(value)
+    {
+        document.getElementById("Capture").innerHTML = value;
+    }
+    /////
+    //Send to VK
+    function VK_MovementDirec(linear ,angular){
+        //return (gameInstance.SendMessage("CameraVK", "KanomchanLinearDirec", "" + JSON.stringify(obj)));
+        document.getElementById("LinearDirec").innerHTML = JSON.stringify(linear);
+        document.getElementById("AngularDirec").innerHTML = JSON.stringify(angular);
+
+    }
+
+    function MSG_LinearDirec(value)
+    {
+          return (gameInstance.SendMessage("CameraVK", "KanomchanLinearDirec", value));
+    }
+    function MSG_AngularDirec(value)
+    {
+          return (gameInstance.SendMessage("CameraVK", "KanomchanAngularDirec", value));
+    }
+    /////
+    //Loop Time
+    function RunTime()
+    {
+        if(x==1)
+        {
+            MSG_LinearDirec(document.getElementById("LinearDirec").innerHTML);
+            MSG_AngularDirec(document.getElementById("AngularDirec").innerHTML);
+        }
+    }
+    /////
+</script>
+</body>
+</html>
