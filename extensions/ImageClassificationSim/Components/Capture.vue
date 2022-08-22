@@ -2,38 +2,72 @@
   <div class="w-100 h-100">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel bg-white">
-        <div class="d-flex flex-fill align-items-center justify-content-center view-panel">
+        <div
+          class="d-flex flex-fill align-items-center justify-content-center view-panel"
+        >
           <!--- <image-display v-if="current.length" :id="current.slice(-1).pop()"></image-display> -->
-          <p class="view-img-desc">
+          <p class="view-img-desc"></p>
           <div>
+            <iframe
+              ref="gameInstance"
+              width="1200"
+              height="600"
+              scorlling="no"
+              border="0"
+              src="/VKBuild/index.html"
+              frameborder="0"
+            />
+            <p>
+              <!--<button v-on:click="onClickF()">Forward</button>
+              <button v-on:click="onClickB()">Backward</button>
+              <button v-on:click="onClickL()">TurnLeft</button>
+              <button v-on:click="onClickR()">TurnRight</button>
+              <button v-on:click="onClickS()">Stop</button>-->
+              <button v-on:click="onClickImg()">Start Streaming</button>
+              <button v-on:click="onClickStopStream()">Stop Stream</button>
+            </p>
 
-            <iframe ref="gameInstance" width="1200" height="600" scorlling="no" border="0" src="/VKBuild/index.html"
-              frameborder="0" />
-
-            <button v-on:click="onClickF()">Forward</button>
-            <button v-on:click="onClickB()">Backward</button>
-            <button v-on:click="onClickL()">TurnLeft</button>
-            <button v-on:click="onClickR()">TurnRight</button>
-            <button v-on:click="onClickS()">Stop</button>
-            <button v-on:click="onClickImg()">Image</button>
-            <button v-on:click="onClickStopStream()">Stop Stream</button>
-            <p id="ImgBase64">0</p>
+        
           </div>
-          </p>
-          <dataset-counter :current="current.length ? positionOf(current.slice(-1).pop()) + 1 : null" suffix="Image">
+
+          <dataset-counter
+            :current="
+              current.length ? positionOf(current.slice(-1).pop()) + 1 : null
+            "
+            suffix="Image"
+          >
           </dataset-counter>
         </div>
         <!-- <image-dataset-list v-model="current"></image-dataset-list> -->
-        <image-dataset-list v-model="current" :multiple="true" :showInfo="true"></image-dataset-list>
+        <image-dataset-list
+          v-model="current"
+          :multiple="true"
+          :showInfo="true"
+        ></image-dataset-list>
       </div>
       <div class="side-panel" style="width: 300px">
-        <image-capture source="" ref="camera" @started="_ => (cameraReady = true)" @stoped="_ => (cameraReady = false)">
+        <image-capture
+          source=""
+          ref="camera"
+          @started="(_) => (cameraReady = true)"
+          @stoped="(_) => (cameraReady = false)"
+        >
         </image-capture>
 
         <div class="center">
-          <img v-on:click.prevent :class="['op-btn', { 'op-btn-disable': !cameraReady }]"
-            src="~/assets/images/UI/png/Group 198.png" height="96" @click="snapAndSave" />
-          <img v-b-modal.import-classify-image class="op-btn" src="~/assets/images/UI/png/Group 199.png" height="96" />
+          <img
+            v-on:click.prevent
+            :class="['op-btn', { 'op-btn-disable': !cameraReady }]"
+            src="~/assets/images/UI/png/Group 198.png"
+            height="96"
+            @click="snapAndSave"
+          />
+          <img
+            v-b-modal.import-classify-image
+            class="op-btn"
+            src="~/assets/images/UI/png/Group 199.png"
+            height="96"
+          />
         </div>
       </div>
     </div>
@@ -63,6 +97,7 @@ export default {
     return {
       current: [],
       cameraReady: false,
+      intervalID: null,
     };
   },
   computed: {
@@ -70,6 +105,7 @@ export default {
   },
   methods: {
     ...mapActions("dataset", ["addData"]),
+    ...mapMutations(["setImageBytes"]),
     async snapAndSave() {
       if (!this.cameraReady) {
         return;
@@ -86,6 +122,7 @@ export default {
       let res = await this.addData(data);
       this.current = [data.id];
     },
+ 
 
     unityWatch(e) {},
     onClickF() {
@@ -105,10 +142,9 @@ export default {
     },
     onClickImg() {
       this.intervalID = setInterval(
-        function () {
-          console.log("Hi HI");
-          document.getElementById("ImgBase64").innerHTML =
-            this.$refs.gameInstance.contentWindow.ImageBase64();
+        function () {   
+            this.imageBytes = this.$refs.gameInstance.contentWindow.ImageBase64();
+            this.setImageBytes(this.imageBytes);
         }.bind(this),
         100
       );
@@ -116,6 +152,7 @@ export default {
       //  this.$refs.gameInstance.contentWindow.ImageBase64();
     },
     onClickStopStream() {
+      console.log("Stop stream");
       clearInterval(this.intervalID);
     },
   },

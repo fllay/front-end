@@ -22,8 +22,9 @@
             ref="displayImage"
             crossorigin="anonymous"
             :width="width"
-            :src="streamUrl+'?topic=/output/image_raw&type=ros_compressed'"
+            :src="'data:image/jpeg;base64,' + imageBytes"
       >
+      <!--:src="streamUrl+'?topic=/output/image_raw&type=ros_compressed'"-->
       </b-img>
     </div>
   </div>
@@ -32,6 +33,12 @@
 <script>
 import { mapState, mapActions, mapMutations,mapGetters  } from 'vuex';
 export default {
+    data() {
+    return {
+      intervalID: null,
+      imageBytes: null,
+    };
+  },
   props : {
     source: {
       type: String,
@@ -56,7 +63,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['currentDevice','initialDevice','streamUrl']),
+    ...mapState(['currentDevice','initialDevice','streamUrl','imageBytes']),
   },
   methods : {
     onCameras(devices){
