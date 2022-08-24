@@ -2,34 +2,43 @@
   <div class="w-100 h-100">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel bg-white">
+        <!--- <image-display v-if="current.length" :id="current.slice(-1).pop()"></image-display> -->
+        <!--<p class="view-img-desc"></p>-->
+
+        <iframe
+          ref="gameInstance"
+          width="100%"
+          height="90%"
+          scrolling="no"
+          border="0"
+          src="/VKBuild/index.html"
+          frameborder="0"
+        />
         <div
           class="d-flex flex-fill align-items-center justify-content-center view-panel"
         >
-          <!--- <image-display v-if="current.length" :id="current.slice(-1).pop()"></image-display> -->
-          <p class="view-img-desc"></p>
-          <div>
-            <iframe
-              ref="gameInstance"
-              width="1200"
-              height="600"
-              scorlling="no"
-              border="0"
-              src="/VKBuild/index.html"
-              frameborder="0"
-            />
-            <p>
-              <!--<button v-on:click="onClickF()">Forward</button>
+          <!--<button v-on:click="onClickF()">Forward</button>
               <button v-on:click="onClickB()">Backward</button>
               <button v-on:click="onClickL()">TurnLeft</button>
               <button v-on:click="onClickR()">TurnRight</button>
               <button v-on:click="onClickS()">Stop</button>-->
-              <button v-on:click="onClickImg()">Start Streaming</button>
-              <button v-on:click="onClickStopStream()">Stop Stream</button>
-            </p>
 
-        
-          </div>
+          <b-button
+            img
+            v-if="isStreaming"
+            v-on:click="onClickStartStream()"
+            variant="danger"
+            size="lg"
+            >Stop stream</b-button
+          >
 
+          <b-button
+            v-else
+            v-on:click="onClickStartStream()"
+            variant="success"
+            size="lg"
+            >Start stream</b-button
+          >
           <dataset-counter
             :current="
               current.length ? positionOf(current.slice(-1).pop()) + 1 : null
@@ -98,6 +107,7 @@ export default {
       current: [],
       cameraReady: false,
       intervalID: null,
+      isStreaming: false,
     };
   },
   computed: {
@@ -122,7 +132,6 @@ export default {
       let res = await this.addData(data);
       this.current = [data.id];
     },
- 
 
     unityWatch(e) {},
     onClickF() {
@@ -140,13 +149,31 @@ export default {
     onClickS() {
       this.$refs.gameInstance.contentWindow.VK_MovementDirec(0, 0);
     },
+    onClickStartStream() {
+      //this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0);
+      //for (let i = 0; i < 500000; i++) {}
+      if (this.isStreaming == false) {
+        this.isStreaming = true;
+        this.intervalID = setInterval(
+          function () {
+            this.imageBytes =
+              this.$refs.gameInstance.contentWindow.ImageBase64();
+            this.setImageBytes(this.imageBytes);
+          }.bind(this),
+          50
+        );
+      } else {
+        this.isStreaming = false;
+        console.log("Stop stream");
+        clearInterval(this.intervalID);
+      }
+    },
     onClickImg() {
       this.intervalID = setInterval(
-        function () {   
-            this.imageBytes = this.$refs.gameInstance.contentWindow.ImageBase64();
-            this.setImageBytes(this.imageBytes);
-        }.bind(this),
-        50
+        function () {
+          this.imageBytes = this.$refs.gameInstance.contentWindow.ImageBase64();
+          this.setImageBytes(this.imageBytes);
+        }.bind(this)
       );
       //document.getElementById("ImgBase64").innerHTML =
       //  this.$refs.gameInstance.contentWindow.ImageBase64();
