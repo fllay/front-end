@@ -146,7 +146,7 @@ export default {
             this.imageBytes = this.$refs.gameInstance.contentWindow.ImageBase64();
             this.setImageBytes(this.imageBytes);
         }.bind(this),
-        100
+        50
       );
       //document.getElementById("ImgBase64").innerHTML =
       //  this.$refs.gameInstance.contentWindow.ImageBase64();
