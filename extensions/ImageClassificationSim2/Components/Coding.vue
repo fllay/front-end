@@ -11,26 +11,44 @@
               <div class="blockly" ref="blocklyDiv"></div>
             </div>
             <div class="col-6">
-              <p>
-                <iframe
-                  ref="gameInstance"
-                  scrolling="no"
-                  width="500"
-                  height="300"
-                  src="/VKBuild/index.html"
-                  frameborder="0"
-                />
-              </p>
-              <p>
-                <button v-on:click="onClickF()">Forward</button>
-                <button v-on:click="onClickB()">Backward</button>
+              <iframe
+                ref="gameInstance"
+                scrolling="no"
+                width="100%"
+                height="60%"
+                src="/VKBuild/index.html"
+                frameborder="0"
+              />
+
+              <!--<button v-on:click="onClickB()">Backward</button>
                 <button v-on:click="onClickL()">TurnLeft</button>
                 <button v-on:click="onClickR()">TurnRight</button>
-                <button v-on:click="onClickS()">Stop</button>
-              </p>
-              <p>
-                <img v-bind:src="'data:image/jpeg;base64,' + imageBytes" />
-              </p>
+                <button v-on:click="onClickS()">Stop</button>-->
+
+              <b-row align-v="center" align-h="center">
+                <b-col sm="6" align-v="center" align-h="center">
+                  <b-button  v-if="isStreaming"
+                    v-on:click="onClickStartStream()"
+                    variant="danger"
+                    size="lg"
+                    >Stop stream</b-button
+                  >
+
+                  <b-button
+                    v-else
+                    v-on:click="onClickStartStream()"
+                    variant="success"
+                    size="lg"
+                    >Start stream</b-button
+                  >
+
+                </b-col>
+                <b-col sm="6">
+           
+                  <img v-if="isStreaming" v-bind:src="'data:image/jpeg;base64,' + imageBytes">
+                  <img v-else src="~/assets/images/UI/png/noimage.png"></img>
+                </b-col>
+              </b-row>
             </div>
           </div>
         </div>
@@ -46,8 +64,8 @@
                 <div v-html="logs" />
               </div>
             </div>
-            <div class="col-2">
-              <div>
+            <div class="col-2" align-v="center" align-h="center">
+             
                 <div class="display-panel" v-show="!isExpanded && isRunning">
                   <p class="display-image">
                     <b-img ref="displayImage" src=""> </b-img>
@@ -67,7 +85,7 @@
                       v-b-modal.expanded-camera
                     />
                   </div>
-                </div>
+                
               </div>
               <div class="buttom">
                 <button
@@ -203,6 +221,7 @@ export default {
       isExpanded: false,
       intervalID: null,
       imageBytes: null,
+      isStreaming: false,
     };
   },
 
@@ -210,34 +229,6 @@ export default {
     unityWatch(e) {},
     run() {
       console.log("run!!!!");
-      //"setTimeout(() => {this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0);\n}, 1000) \n";
-      var code = "(async () => {\n";
-      code =
-        code +
-        "this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0); \n console.log('start 2 sec')\n await new Promise(r => setTimeout(r, 2000));\n console.log('2 sec')\n";
-      code =
-        code +
-        "this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.0, 0.4); \n await new Promise(r => setTimeout(r, 2000));\n";
-      code =
-        code +
-        "this.$refs.gameInstance.contentWindow.VK_MovementDirec(-0.15, 0); \n await new Promise(r => setTimeout(r, 2000));\n";
-      code =
-        code +
-        "this.$refs.gameInstance.contentWindow.VK_MovementDirec(0, 0); \n await new Promise(r => setTimeout(r, 2000));\n";
-      code = code + "})()\n";
-
-      /*code =
-        code +
-        "setTimeout(() => {this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.0, 0.4);\n}, 1100) \n";
-
-       code =
-        code +
-        "setTimeout(() => {this.$refs.gameInstance.contentWindow.VK_MovementDirec(-0.15, 0);\n}, 1200) \n";
-      
-      code =
-        code +
-        "setTimeout(() => {this.$refs.gameInstance.contentWindow.VK_MovementDirec(0, 0);\n}, 1300) \n";*/
-
       var code1 = Blockly.JavaScript.workspaceToCode(this.blockly_woakspace);
       var codeAsync = "(async () => {\n";
       codeAsync = codeAsync + code1;
@@ -257,14 +248,24 @@ export default {
     },
     onClickF() {
       //this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0);
+    },
+    onClickStartStream() {
+      //this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0);
       //for (let i = 0; i < 500000; i++) {}
-
-      this.intervalID = setInterval(
-        function () {
-          this.imageBytes = this.$refs.gameInstance.contentWindow.ImageBase64();
-        }.bind(this),
-        50
-      );
+      if (this.isStreaming == false) {
+        this.isStreaming = true;
+        this.intervalID = setInterval(
+          function () {
+            this.imageBytes =
+              this.$refs.gameInstance.contentWindow.ImageBase64();
+          }.bind(this),
+          50
+        );
+      } else {
+        this.isStreaming = false;
+        console.log("Stop stream");
+        clearInterval(this.intervalID);
+      }
     },
     onClickB() {
       this.$refs.gameInstance.contentWindow.VK_MovementDirec(-0.15, 0);
@@ -607,21 +608,26 @@ ul {
     }
   }
 }
+
 #expanded-camera {
   .result {
     height: 20vh;
+
     .bg-secondary {
       height: 100%;
     }
   }
+
   .display-image {
     background-color: #333 !important;
+
     img.realtime-image {
       width: 100%;
       height: 55vh;
       object-fit: contain;
     }
   }
+
   .control {
     background-color: #ffffff;
     width: 100%;

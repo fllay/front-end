@@ -11,8 +11,8 @@
       <button v-on:click="hide">hide</button>
       <iframe
         ref="gameInstance"
-        width="1200"
-        height="600"
+        width="100vw"
+        
         scorlling="no"
         border="0"
         src="/VKBuild/index.html"

@@ -16,6 +16,8 @@ export const state = () => ({
   currentWifi: null,
   isRunning: false,
   selectedMenu: 0,
+  //------  Image streaming data from Unity 
+  imageBytes: null,
   //----- save project ------//
   saving: false,
   savingProgress: 0,
@@ -42,6 +44,9 @@ export const mutations = {
   },
   setCurrentWifi(state, wifi) {
     state.currentWifi = wifi;
+  },
+  setImageBytes(state, imageBytes) {
+    state.imageBytes = imageBytes;
   },
 };
 
