@@ -18,7 +18,7 @@
         <b-button class="btn base-btn" v-b-modal.inferenceDetection :disabled="!isTrained">
           Test
         </b-button>
-        <b-button class="btn base-btn" :disabled="!isTrained || isConverting" @click="downloadModel">
+        <b-button class="btn base-btn" @click="downloadModel">
           <b-spinner v-if="isConverting" small></b-spinner>
           {{isConverting? "Converting...":"Download"}}
         </b-button>
@@ -45,7 +45,7 @@ import MLModelDesigner from "~/components/MLModelDesign.vue";
 import SyncProjectModal from "~/components/Modals/SyncProjectModal.vue";
 import ServerReport from "~/components/ServerReport.vue";
 import InferenceModal from "../Modals/InferenceModal.vue";
-
+import axios from 'axios';
 export default {
   name: "Train",
   components: {
@@ -74,12 +74,15 @@ export default {
     },
     downloadModel: async function(){
       let res = await this.convert_model();
+      console.log(this.url);
+      console.log(this.serverUrl);
       //this.$toast.success("Convert Model Finished!");
+      let projectId = this.$store.state.project.project.id;
       if(res && this.currentDevice == "BROWSER"){
-        let projectId = this.$store.state.project.project.id;
         //let model_h5 = await axios.get(`${this.serverUrl}/projects/${projectId}/output/`);
         window.open(`${this.url}/download_model?project_id=${projectId}`,"_blank");
       }else if(res && this.currentDevice == "ROBOT" && !this.url.startsWith(this.serverUrl)){
+        console.log("download model for robot");
         let serverDownloadModel = await axios.post(`${this.serverUrl}/download_server_project`,
         {
           project_id : projectId,
@@ -115,6 +118,7 @@ export default {
     
   },
   computed: {
+    ...mapState(["currentDevice","serverUrl"]),
     ...mapState("server",["url","isConnected","isTraining","isTerminating","isTrained","isConverting","isConverted"]),
     downloadable: function() {
       return this.isDone && !this.isDownloading;

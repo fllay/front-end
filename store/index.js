@@ -12,6 +12,7 @@ export const state = () => ({
   currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
   serverUrl: "http://192.168.1.101:5000/",
   streamUrl: "http://192.168.1.101:8080/stream",
+  tarminalUrl: "http://192.168.1.101:8888/",
   currentWifi: null,
   isRunning: false,
   selectedMenu: 0,

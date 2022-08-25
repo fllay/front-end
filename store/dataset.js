@@ -160,6 +160,7 @@ export const actions = {
     if (!this._vm.$fs) {
       await prepareDataset(this._vm, state.dataset);
     }
+    console.log(data.image);
     await storage.writeFile(
       this._vm.$fs,
       `${state.dataset.project}/${data.id}.${data.ext}`,

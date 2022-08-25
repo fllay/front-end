@@ -23,40 +23,6 @@
           </div>
         </div>
       </div>
-
-      
-      <b-modal
-        id="expanded-camera"
-        size="xl"
-        title="Live view"
-        modal-class="my-modal-class my-modal-class-no-pad"
-        :centered="true"
-        :hide-footer="true"
-        :hide-header-close="true"
-        @shown="setExpanded(true)"
-        @hide="setExpanded(false)"
-        :no-close-on-backdrop="true"
-        :no-close-on-esc="true"
-      >
-        <div class="display-image">
-          <b-img class="realtime-image" ref="displayImageFull" src=""> </b-img>
-          <div class="control">
-            <b-form-checkbox
-              class="check"
-              v-model="nDisplay"
-              name="check-button"
-              switch
-            >
-              Detector
-            </b-form-checkbox>
-            <img
-              src="~/assets/images/UI/svg/minimize-arrows.svg"
-              height="20"
-              @click="$bvModal.hide('expanded-camera')"
-            />
-          </div>
-        </div>
-      </b-modal>
     </div>
   </div>
 </template>
@@ -64,7 +30,7 @@
 <script>
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { io } from "socket.io-client";
+import io from "socket.io-client";
 
 import "xterm/css/xterm.css";
 import BlocklyCode from "@/components/BlocklyCode.vue";
@@ -81,7 +47,6 @@ export default {
       logs: "",
       s_result: "",
       term: null,
-      ndisplay: false,
       socket : null
     };
   },
@@ -96,17 +61,7 @@ export default {
     },
   },
   computed: {
-    ...mapState(["currentDevice","serverUrl","streamUrl"]),
-    updateXML: function () {
-      console.log("Update XML to workspace");
-      this.blockly_woakspace.clear();
-      let textToDom = Blockly.Xml.textToDom(this.blockly_xml);
-      Blockly.Xml.domToWorkspace(this.blockly_woakspace, textToDom);
-    },
-    updateOutput: function () {
-      console.log("NDisplay =");
-      console.log(this.nDisplay);
-    },
+    ...mapState(["currentDevice","serverUrl","tarminalUrl","streamUrl"]),
   },
   watch: {
     
@@ -118,10 +73,9 @@ export default {
     this.term.open(this.$refs.terminal);
     this.term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
     fitAddon.fit();
-    
-    this.socket = io(); //.connect();
+    this.socket = io(this.tarminalUrl); //.connect();
     this.socket.on('connect', function() {
-      term.write('\r\n*** Connected to backend ***\r\n');
+      this.term.write('\r\n*** Connected to backend ***\r\n');
     });
     this.term.onKey(function (ev) {
       this.socket.emit('data', ev.key);
@@ -137,7 +91,7 @@ export default {
     
   },
   beforeDestroy() {
-    this.unsubscribe();
+    //this.unsubscribe();
   },
 };
 </script>

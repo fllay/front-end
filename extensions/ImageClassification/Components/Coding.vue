@@ -129,23 +129,6 @@ export default {
         }
       },
     },
-    s_result: function (val) {
-      console.log("watch = ");
-      this.result += val;
-      //console.log(val.toString(16))
-      var ss = val.replace(/(<([^>]+)>)/gi, "");
-
-      //const ss = strippedString.replace(/[\n\r\t]/g,);
-      var base = 16;
-
-      /*console.log(ss.split('').map(function (c) {
-                return c.charCodeAt(0);
-            }))
-            console.log(ss)*/
-      if (ss.replace(/(\r\n|\n|\r)/gm, "") === "DONE") {
-        console.log("Finished");
-      }
-    },
   },
 
   mounted() {
@@ -158,20 +141,7 @@ export default {
 
   },
   created() {
-    this.unsubscribe = this.$store.subscribe((mutation, state) => {
-      if (mutation.type === "setBlocklyXml") {
-        setTimeout(() => {
-          console.log("updating xml !!!!!!!!!");
-          //console.log(state.blockly_xml)
-          this.blockly_xml = state.blockly_xml;
-          // console.log('blockly_xml == ',this.blockly_xml)
-          //this.blockly_woakspace = state.blockly_xml
-          this.blockly_woakspace.clear();
-          let textToDom = Blockly.Xml.textToDom(this.blockly_xml);
-          Blockly.Xml.domToWorkspace(this.blockly_woakspace, textToDom);
-        }, 500);
-      }
-    });
+    
   },
   beforeDestroy() {
     this.unsubscribe();

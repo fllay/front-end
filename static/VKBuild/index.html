@@ -12,9 +12,9 @@
         var gameInstance = UnityLoader.instantiate("gameContainer", "Build/VK Build.json", {onProgress: UnityProgress});
     </script>
 </head>
-<body>
+<body style="overflow: hidden;">
 <div class="webgl-content">
-    <div id="gameContainer" style="width: 1280px; height: 720px"></div>
+    <div id="gameContainer" style="width: 1280px; height: 700px"></div>
 </div>
 <div class="simmer"><a href="https://simmer.io" target="_blank"></a></div>
 <details style="width: 50px; height: 50px; margin-left: 100px ;margin-top: 10px"> <summary>.</summary>
@@ -51,6 +51,7 @@
     }
     function ImgStream(value)
     {
+        console.log("stream");
         document.getElementById("ImgBase64").innerHTML = value;
     }
     function ImageBase64()

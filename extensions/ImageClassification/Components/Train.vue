@@ -86,7 +86,7 @@ export default {
           project_id : projectId,
           url : this.url
         });
-
+        
       }
     },
     connectServer: function(url){

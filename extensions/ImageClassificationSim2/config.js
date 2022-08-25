@@ -1,7 +1,7 @@
 export default {
-  id: "IMAGE_CLASSIFICATION_SIM",
-  name: "Image Classification sim",
-  title: "การแยกแยะรูปภาพ (Image classification Sim)",
+  id: "IMAGE_CLASSIFICATION_SIM2",
+  name: "Image Classification sim2",
+  title: "การแยกแยะรูปภาพ (Image classification Sim2)",
   type: "Classifier",
   description: "",
   config: {}, // not use yet
