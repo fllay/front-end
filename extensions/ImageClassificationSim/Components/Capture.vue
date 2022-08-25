@@ -92,6 +92,7 @@ import ImageDatasetList from "~/components/InputConnection/ImageDatasetList.vue"
 import DatasetCounter from "~/components/InputConnection/DatasetCounter.vue";
 import ImportImages from "../Modals/ImportImages.vue";
 import Unity from "vue-unity-webgl";
+
 export default {
   name: "Capture",
   components: {
@@ -131,6 +132,7 @@ export default {
       let res = await this.addData(data);
       this.current = [data.id];
     },
+
     unityWatch(e) {},
     onClickF() {
       this.$refs.gameInstance.contentWindow.VK_MovementDirec(0.15, 0);
@@ -186,20 +188,24 @@ export default {
 
 <style lang="scss" scoped>
 $primary-color: #007e4e;
+
 .op-btn {
   transition: opacity 0.3s ease-in;
   cursor: pointer;
   margin: 0 0.5em;
+
   &:hover {
     opacity: 0.7;
   }
 }
+
 .op-btn-disable {
   pointer-events: none;
   -webkit-filter: grayscale(100%);
   /* Safari 6.0 - 9.0 */
   filter: grayscale(100%);
 }
+
 .side-panel {
   padding: 15px;
   display: flex;
@@ -207,6 +213,7 @@ $primary-color: #007e4e;
   justify-content: flex-end;
   align-items: center;
   width: 300px;
+
   .next {
     height: 50px;
     background: #ffffff 0% 0% no-repeat padding-box;
@@ -216,10 +223,12 @@ $primary-color: #007e4e;
     align-items: center;
     position: relative;
     margin-top: 15px;
+
     span {
       color: $primary-color;
       font-size: 1.5rem;
       font-weight: 800;
+
       &.ico {
         position: absolute;
         top: 7px;
@@ -228,20 +237,25 @@ $primary-color: #007e4e;
     }
   }
 }
+
 .outer-wrap {
   overflow: hidden;
 }
+
 .main-panel {
   width: calc(100% - 300px);
 }
+
 .view-panel {
   background-color: #333;
   position: relative;
+
   img {
     min-width: 50%;
     min-height: 50%;
     object-fit: contain;
   }
+
   .view-img-desc {
     color: #fff;
   }
