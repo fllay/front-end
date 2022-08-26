@@ -22,7 +22,6 @@
 
 <p id="LinearDirec">0</p>
 <p id="AngularDirec">0</p>
-
 </details>
 <script src="TemplateData/responsive.javascript"></script>
 <script>
@@ -41,13 +40,15 @@
         //delay = 99999999;
     }
     //Receive from VK
-    function VK_Run(value)
+    function VK_Clr()
     {
-        x = value;
-        if(value == 0){
-            document.getElementById("LinearDirec").innerHTML = 0;
-            document.getElementById("AngularDirec").innerHTML = 0;
-        }
+        //x = value;
+        //if(value == 0){
+            //document.getElementById("LinearDirec").innerHTML = 0;
+            //document.getElementById("AngularDirec").innerHTML = 0;
+        //}
+        document.getElementById("LinearDirec").innerHTML = 0;
+        document.getElementById("AngularDirec").innerHTML = 0;
     }
     function ImgStream(value)
     {
@@ -67,6 +68,16 @@
     //}
     /////
     //Send to VK
+    function MSG_RunProgram(value)
+    {
+        x = value;
+        return (gameInstance.SendMessage("CameraVK", "ProgramRun", value));
+    }
+    //function CameraEnable(val)
+    //{
+        //return (gameInstance.SendMessage("CameraVK", "CameraSnapOnOff", val));
+        
+    //}
     function VK_MovementDirec(linear ,angular){
         //return (gameInstance.SendMessage("CameraVK", "KanomchanLinearDirec", "" + JSON.stringify(obj)));
         document.getElementById("LinearDirec").innerHTML = JSON.stringify(linear);
@@ -90,6 +101,11 @@
         {
             MSG_LinearDirec(document.getElementById("LinearDirec").innerHTML);
             MSG_AngularDirec(document.getElementById("AngularDirec").innerHTML);
+        }
+        else
+        {
+            document.getElementById("LinearDirec").innerHTML = 0;
+            document.getElementById("AngularDirec").innerHTML = 0;
         }
     }
     /////

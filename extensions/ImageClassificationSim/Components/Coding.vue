@@ -229,13 +229,14 @@ export default {
     unityWatch(e) {},
     run() {
       console.log("run!!!!");
+      this.$refs.gameInstance.contentWindow.MSG_RunProgram('1')
       var code1 = Blockly.JavaScript.workspaceToCode(this.blockly_woakspace);
       var codeAsync = "(async () => {\n";
       codeAsync = codeAsync + code1;
       codeAsync = codeAsync + "})()\n";
 
       console.log(codeAsync);
-      console.log(code);
+      
       try {
         eval(codeAsync);
       } catch (error) {
