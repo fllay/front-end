@@ -30,17 +30,10 @@
     </div>
     <div v-else-if="currentDevice == 'ROBOT'">
       <b-img
-<<<<<<< HEAD
         ref="displayImage"
         crossorigin="anonymous"
         :width="width"
         :src="streamUrl + '?topic=/output/image_raw&type=ros_compressed'"
-=======
-            ref="displayImage"
-            crossorigin="anonymous"
-            :width="width"
-            :src="'data:image/jpeg;base64,' + imageBytes"
->>>>>>> 219efc49369c4a1708fdef51e41f6f71f7fc3803
       >
       <!--:src="streamUrl+'?topic=/output/image_raw&type=ros_compressed'"-->
       </b-img>
@@ -50,17 +43,7 @@
 <script>
 import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
-<<<<<<< HEAD
   props: {
-=======
-    data() {
-    return {
-      intervalID: null,
-      imageBytes: null,
-    };
-  },
-  props : {
->>>>>>> 219efc49369c4a1708fdef51e41f6f71f7fc3803
     source: {
       type: String,
       default: "",
@@ -84,11 +67,7 @@ export default {
     }
   },
   computed: {
-<<<<<<< HEAD
     ...mapState(["currentDevice", "initialDevice", "streamUrl"]),
-=======
-    ...mapState(['currentDevice','initialDevice','streamUrl','imageBytes']),
->>>>>>> 219efc49369c4a1708fdef51e41f6f71f7fc3803
   },
   methods: {
     onCameras(devices) {
