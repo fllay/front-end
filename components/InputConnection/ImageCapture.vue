@@ -35,7 +35,6 @@
         :width="width"
         :src="streamUrl + '?topic=/output/image_raw&type=ros_compressed'"
       >
-      <!--:src="streamUrl+'?topic=/output/image_raw&type=ros_compressed'"-->
       </b-img>
     </div>
   </div>

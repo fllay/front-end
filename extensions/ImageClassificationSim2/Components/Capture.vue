@@ -13,9 +13,9 @@
             v-show="mode == 'SIM'"
             ref="simulator"
             @close="mode = 'CAM'"
+            @snap="snapHandler"
           ></simulator-controller>
           <dataset-counter
-            :style="{ right: mode == 'CAM' ? '30px' : '150px' }"
             :current="
               current.length ? positionOf(current.slice(-1).pop()) + 1 : null
             "
@@ -99,6 +99,9 @@ export default {
   },
   methods: {
     ...mapActions("dataset", ["addData"]),
+    async snapHandler() {
+      await this.snapAndSave();
+    },
     async snapAndSave() {
       if (this.mode == "SIM") {
         let { image, thumbnail, width, height } =
@@ -111,8 +114,6 @@ export default {
           class: null,
           ext: "jpg",
         };
-        console.log("sssssssssss");
-        console.log(data);
         let res = await this.addData(data);
       } else {
         if (!this.cameraReady) {
