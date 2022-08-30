@@ -55,7 +55,9 @@ export const mutations = {
     state.project.model = model;
   },
   saveCode(state, code) {
+    console.log("lllllll");
     state.project.code = code;
+    console.log("sssssssssssssssss");
   },
   saveWorkspace(state, ws) {
     state.project.workspace = ws;

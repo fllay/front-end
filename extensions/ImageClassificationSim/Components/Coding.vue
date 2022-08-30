@@ -46,7 +46,7 @@
                 <b-col sm="6">
            
                   <img v-if="isStreaming" v-bind:src="'data:image/jpeg;base64,' + imageBytes">
-                  <img v-else src="~/assets/images/UI/png/noimage.png"></img>
+                  <img v-else src="~/assets/images/UI/png/noimage.png">
                 </b-col>
               </b-row>
             </div>

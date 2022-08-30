@@ -24,57 +24,94 @@
  * @fileoverview Blockly Vue Component.
  * @author samelh@google.com (Sam El-Husseini)
  */
-import Blockly from "blockly";
+import Blockly, { Block } from "blockly";
 import blocklyPython from "blockly/python";
+import blocklyJavascript from "blockly/javascript";
 import Toolbox from "./Blocks/Toolbox";
 import BlocklyPythonGenerator from "./Blocks/BlocklyPythonGenerator";
-import { mapState, mapActions, mapMutations , mapGetters } from "vuex";
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
-  name : "Blockly",
-  data(){
-    return {
-      blockly_workspace : null,
-      blockly_xml : null,
-    }
+  name: "Blockly",
+  props: {
+    toolbox: {
+      type: String,
+      default: Toolbox,
+    },
+    language: {
+      type: String,
+      default: "python",
+    },
+    blocks: {
+      type: Function,
+    },
   },
-  mounted(){
+  data() {
+    return {
+      blockly_workspace: null,
+      blockly_xml: null,
+      code: "",
+      xml: "",
+    };
+  },
+  mounted() {
     BlocklyPythonGenerator(Blockly, this);
-    this.$nextTick(()=>{
+    if (this.blocks) {
+      this.blocks(Blockly, this);
+    }
+    this.$nextTick(() => {
       const config = {
-        toolbox : Toolbox,
-        scrollbars : true,
-        css : true,
+        toolbox: this.toolbox,
+        scrollbars: true,
+        css: true,
         grid: {
           spacing: 25,
           length: 3,
           colour: "#ccc",
-          snap: true
+          snap: true,
         },
-        zoom : {
+        zoom: {
           controls: true,
           wheel: true,
           startScale: 1.0,
           maxScale: 4,
           minScale: 0.25,
           scaleSpeed: 1.1,
-        }
-      }
+        },
+      };
       this.blockly_workspace = Blockly.inject(this.$refs["blocklyDiv"], config);
       this.blockly_workspace.addChangeListener(this.workspaceUpdate);
     });
   },
-  computed:{
-    ...mapMutations("project",["saveCode","saveWorkspace"])
+  computed: {
+    ...mapMutations("project", ["saveCode", "saveWorkspace"]),
   },
   methods: {
-    workspaceUpdate(event){
-      if (event.type != Blockly.Events.UI) {
-        let sourceCode = Blockly.Python.workspaceToCode( this.blockly_workspace );
-        var xml = Blockly.Xml.domToText( Blockly.Xml.workspaceToDom(Blockly.mainWorkspace));
-        this.saveCode(sourceCode);
-        this.saveWorkspace(xml);
+    getCode() {
+      return this.code;
+    },
+    getXml() {
+      return this.xml;
+    },
+    workspaceUpdate(event) {
+      if (
+        event.type == "create" ||
+        event.type == "delete" ||
+        event.type == "move"
+      ) {
+        let gen = null;
+        if (this.language == "python") {
+          gen = Blockly.Python;
+        } else if (this.language == "javascript") {
+          gen = Blockly.JavaScript;
+        }
+        let sourceCode = gen.workspaceToCode(this.blockly_workspace);
+        var xml = Blockly.Xml.domToText(
+          Blockly.Xml.workspaceToDom(Blockly.mainWorkspace)
+        );
+        this.code = sourceCode;
+        this.xml = xml;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>

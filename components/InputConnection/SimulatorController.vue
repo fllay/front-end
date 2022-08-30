@@ -9,14 +9,7 @@
       src="/VKBuild/index.html"
       frameborder="0"
     />
-    <div class="game-controller">
-      <!-- <b-avatar
-        @click="(isStreaming = !isStreaming), $emit('onStreaming', isStreaming)"
-        :icon="isStreaming ? 'stop-circle-fill' : 'play-circle-fill'"
-        :size="52"
-        button
-        class="mx-1"
-      ></b-avatar> -->
+    <div v-if="showController" class="game-controller">
       <b-avatar
         icon="x-circle-fill"
         :size="52"
@@ -30,7 +23,16 @@
 <script>
 import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
-  props: {},
+  props: {
+    showController: {
+      type: Boolean,
+      default: true,
+    },
+    captureKey: {
+      type : Boolean,
+      default: true,
+    }
+  },
   data() {
     return {
       isStreaming: false,
@@ -38,10 +40,12 @@ export default {
   },
   created() {},
   mounted() {
-    this.$refs.gameInstance.contentWindow.addEventListener(
-      "keyup",
-      this.onKey.bind(this)
-    );
+    if(this.captureKey){
+      this.$refs.gameInstance.contentWindow.addEventListener(
+        "keyup",
+        this.onKey.bind(this)
+      );
+    }
   },
   computed: {
     ...mapState(["currentDevice", "initialDevice", "streamUrl"]),
