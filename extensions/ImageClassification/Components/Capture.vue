@@ -2,27 +2,53 @@
   <div class="w-100 h-100">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel bg-white">
-        <div class="d-flex flex-fill align-items-center justify-content-center view-panel">
-          <image-display v-if="current.length" :id="current.slice(-1).pop()"></image-display>
-          <p class="view-img-desc" v-if="!current.length">
+        <div
+          class="d-flex flex-fill align-items-center justify-content-center view-panel"
+        >
+          <image-display
+            v-if="current.length && mode == 'CAM'"
+            :id="current.slice(-1).pop()"
+          ></image-display>
+          <simulator-controller
+            v-show="mode == 'SIM'"
+            ref="simulator"
+            @close="mode = 'CAM'"
+            @snap="snapAndSave"
+          ></simulator-controller>
+          <p class="view-img-desc" v-if="!current.length && mode == 'CAM'">
             No selected image, please click on the image below to select.
           </p>
-          <dataset-counter :current="current.length ? positionOf(current.slice(-1).pop())+1 : null" suffix="Image"></dataset-counter>
+          <dataset-counter
+            :current="
+              current.length ? positionOf(current.slice(-1).pop()) + 1 : null
+            "
+            suffix="Image"
+          ></dataset-counter>
         </div>
         <!-- <image-dataset-list v-model="current"></image-dataset-list> -->
-        <image-dataset-list v-model="current" :multiple="true" :showInfo="true"></image-dataset-list>
+        <image-dataset-list
+          v-model="current"
+          :multiple="true"
+          :showInfo="true"
+        ></image-dataset-list>
       </div>
       <div class="side-panel" style="width: 300px">
-        <image-capture 
-          source="" 
-          ref="camera" 
-          @started="_=>(cameraReady=true)" 
-          @stoped="_=>(cameraReady=false)"
-        ></image-capture>
+        <image-capture
+          v-show="mode == 'CAM'"
+          @openSim="mode = 'SIM'"
+          source=""
+          ref="camera"
+          @started="(_) => (cameraReady = true)"
+          @stoped="(_) => (cameraReady = false)"
+        >
+        </image-capture>
         <div class="center">
           <img
             v-on:click.prevent
-            :class="['op-btn',{ 'op-btn-disable': !cameraReady}]"
+            :class="[
+              'op-btn',
+              { 'op-btn-disable': !cameraReady && mode != 'SIM' },
+            ]"
             src="~/assets/images/UI/png/Group 198.png"
             height="96"
             @click="snapAndSave"
@@ -41,12 +67,13 @@
 </template>
 
 <script>
-import { mapState, mapActions, mapMutations , mapGetters } from 'vuex';
-import ImageCapture from '~/components/InputConnection/ImageCapture.vue';
-import ImageDisplay from '~/components/InputConnection/ImageDisplay.vue';
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
+import ImageCapture from "~/components/InputConnection/ImageCapture.vue";
+import ImageDisplay from "~/components/InputConnection/ImageDisplay.vue";
 import ImageDatasetList from "~/components/InputConnection/ImageDatasetList.vue";
-import DatasetCounter from '~/components/InputConnection/DatasetCounter.vue';
-import ImportImages from '../Modals/ImportImages.vue';
+import DatasetCounter from "~/components/InputConnection/DatasetCounter.vue";
+import ImportImages from "../Modals/ImportImages.vue";
+import SimulatorController from "~/components/InputConnection/SimulatorController.vue";
 
 export default {
   name: "Capture",
@@ -55,36 +82,53 @@ export default {
     ImageDisplay,
     ImageDatasetList,
     DatasetCounter,
-    ImportImages
+    ImportImages,
+    SimulatorController,
   },
   data() {
     return {
-      current : [],
-      cameraReady : false,
+      mode: "CAM", //SIM or CAM
+      current: [],
+      cameraReady: false,
     };
   },
   computed: {
-    ...mapGetters("dataset",['positionOf']),
+    ...mapGetters("dataset", ["positionOf"]),
   },
   methods: {
-    ...mapActions("dataset",["addData"]),
-    async snapAndSave(){
-      if(!this.cameraReady){
-        return;
+    ...mapActions("dataset", ["addData"]),
+    async snapAndSave() {
+      if (this.mode == "SIM") {
+        let { image, thumbnail, width, height } =
+          await this.$refs.simulator.snap();
+        let data = {
+          id: this.$helper.randomString(16),
+          thumbnail: image,
+          image: image,
+          annotate: [],
+          class: null,
+          ext: "jpg",
+        };
+        let res = await this.addData(data);
+      } else {
+        if (!this.cameraReady) {
+          return;
+        }
+        let { image, thumbnail, width, height } =
+          await this.$refs.camera.snap();
+        let data = {
+          id: this.$helper.randomString(16),
+          thumbnail: thumbnail,
+          image: image,
+          annotate: [],
+          class: null,
+          ext: "jpg",
+        };
+        let res = await this.addData(data);
+        this.current = [data.id];
       }
-      let {image, thumbnail, width, height} = await this.$refs.camera.snap();
-      let data = {
-        id : this.$helper.randomString(16),
-        thumbnail : thumbnail,
-        image: image,
-        annotate : [],
-        class: null,
-        ext : "jpg"
-      };
-      let res = await this.addData(data);
-      this.current = [data.id];
     },
-  }
+  },
 };
 </script>
 
@@ -99,8 +143,8 @@ $primary-color: #007e4e;
     opacity: 0.7;
   }
 }
-.op-btn-disable{
-  pointer-events: none;  
+.op-btn-disable {
+  pointer-events: none;
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
   filter: grayscale(100%);
 }

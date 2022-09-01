@@ -2,91 +2,79 @@
   <div class="blockly-module">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel">
-        <div class="d-flex flex-fill flex-column" style="background-color: white">
-          <blockly-code ref="blockly"></blockly-code>
+        <div
+          class="d-flex flex-fill flex-column"
+          style="background-color: white"
+        >
+          <blockly-code ref="blockly" style="width: 50%"></blockly-code>
+          <simulator-controller
+            style="width: 50%"
+            ref="simulator"
+            :showController="false"
+            :captureKey="false"
+          ></simulator-controller>
         </div>
-        <div style="height: 200px; display: flex;">
-          <div style="width: 100%; height: 100%; padding: 5px; background-color: black;" id="terminal" ref="terminal"></div>
-          <div style="width: 200px; height: 100%;text-align: center;padding-top: 46px; background-color: black;">
+        <div style="height: 200px; display: flex">
+          <div
+            style="
+              width: 100%;
+              height: 100%;
+              padding: 5px;
+              background-color: black;
+            "
+            id="terminal"
+            ref="terminal"
+          ></div>
+          <div
+            style="
+              width: 200px;
+              height: 100%;
+              text-align: center;
+              padding-top: 46px;
+              background-color: black;
+            "
+          >
             <div class="button">
-              <button
-                pill
-                v-on:click="handleRun"
-                class="btn-run op-btn"
-              >
+              <button pill v-on:click="handleRun" class="btn-run op-btn">
                 <span class="ico">
-                  <img v-if="!isRunning" src="~/assets/images/UI/svg/Group 80.svg" alt="" srcset=""/>
-                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" alt="" srcset=""/>
+                  <img
+                    v-if="!isRunning"
+                    src="~/assets/images/UI/svg/Group 80.svg"
+                  />
+                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" />
                 </span>
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      
-      <b-modal
-        id="expanded-camera"
-        size="xl"
-        title="Live view"
-        modal-class="my-modal-class my-modal-class-no-pad"
-        :centered="true"
-        :hide-footer="true"
-        :hide-header-close="true"
-        @shown="setExpanded(true)"
-        @hide="setExpanded(false)"
-        :no-close-on-backdrop="true"
-        :no-close-on-esc="true"
-      >
-        <div class="display-image">
-          <b-img class="realtime-image" ref="displayImageFull" src=""> </b-img>
-          <div class="control">
-            <b-form-checkbox
-              class="check"
-              v-model="nDisplay"
-              name="check-button"
-              switch
-            >
-              Detector
-            </b-form-checkbox>
-            <img
-              src="~/assets/images/UI/svg/minimize-arrows.svg"
-              height="20"
-              @click="$bvModal.hide('expanded-camera')"
-            />
-          </div>
-        </div>
-      </b-modal>
     </div>
   </div>
 </template>
 
 <script>
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
 import BlocklyCode from "@/components/BlocklyCode.vue";
 
-import { mapState, mapActions, mapMutations , mapGetters } from "vuex";
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
   name: "BlocklyComponent",
   components: {
-    BlocklyCode
+    BlocklyCode,
   },
   data() {
     return {
-      isRunning : false,
+      toolbox: Toolbox,
+      blocks: Blocks,
       logs: "",
-      s_result: "",
-      term: null,
-      ndisplay: false,
+      isRunning: false,
     };
   },
   methods: {
-    async handleRun(){
-
-    },
-    async run(){
+    async handleRun() {},
+    async run() {
       let code = blocklyPython.workspaceToCode(this.blockly_woakspace);
       console.log(code);
       this.$toast.success("Running code");
@@ -101,7 +89,7 @@ export default {
     },
   },
   computed: {
-    ...mapState(["currentDevice","serverUrl","streamUrl"]),
+    ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
     updateXML: function () {
       console.log("Update XML to workspace");
       this.blockly_woakspace.clear();
@@ -119,11 +107,14 @@ export default {
       handler: function (newValue) {
         console.log("Selected users changed", newValue);
         if (newValue == false) {
-          this.url = this.streamUrl +"?topic=/output/image_raw&type=ros_compressed";
+          this.url =
+            this.streamUrl + "?topic=/output/image_raw&type=ros_compressed";
           this.$refs.displayImage.src = this.url;
           this.$refs.displayImageFull.src = this.url;
         } else if (newValue == true) {
-          this.url = this.streamUrl +"?topic=/output/image_detected&type=ros_compressed";
+          this.url =
+            this.streamUrl +
+            "?topic=/output/image_detected&type=ros_compressed";
           this.$refs.displayImage.src = this.url;
           this.$refs.displayImageFull.src = this.url;
         }
@@ -132,17 +123,14 @@ export default {
   },
 
   mounted() {
-    this.term = new Terminal({ cursorBlink: true });        
+    this.term = new Terminal({ cursorBlink: true });
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
-    this.term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+    this.term.write("Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ");
     fitAddon.fit();
-
   },
-  created() {
-    
-  },
+  created() {},
   beforeDestroy() {
     this.unsubscribe();
   },
@@ -168,7 +156,7 @@ ul {
   list-style: none;
   padding: 0;
 }
-.button{
+.button {
   .btn-run {
     img {
       width: 100px;
@@ -207,8 +195,7 @@ ul {
     height: 100%;
     width: 100%;
   }
-  
-  
+
   .side-panel {
     padding: 15px;
     position: absolute;

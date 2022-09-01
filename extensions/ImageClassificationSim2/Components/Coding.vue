@@ -92,6 +92,7 @@ export default {
     },
     run() {
       console.log("run!!!!");
+      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram('1');
       var code = this.$refs.blockly.getCode();
       var workspace = this.$refs.blockly.getXml();
       //this.saveWorkspace(workspace);
