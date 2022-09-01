@@ -2,12 +2,15 @@
   <div class="blockly-module">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel">
-        <div
-          class="d-flex flex-fill flex-column"
-          style="background-color: white"
-        >
-          <blockly-code ref="blockly" style="width: 50%"></blockly-code>
+        <div class="d-flex flex-fill flex-row" style="background-color: white">
+          <blockly-code
+            ref="blockly"
+            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '100%' }"
+            :toolbox="toolbox"
+            :blocks="blocks"
+          ></blockly-code>
           <simulator-controller
+            v-if="currentDevice == 'BROWSER'"
             style="width: 50%"
             ref="simulator"
             :showController="false"
@@ -53,16 +56,21 @@
 </template>
 
 <script>
+import SimulatorController from "~/components/InputConnection/SimulatorController.vue";
+import BlocklyCode from "@/components/BlocklyCode.vue";
+import Toolbox from "../Blocks/toolbox";
+import Blocks from "../Blocks/blocks";
+
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
-import BlocklyCode from "@/components/BlocklyCode.vue";
 
 import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
   name: "BlocklyComponent",
   components: {
     BlocklyCode,
+    SimulatorController,
   },
   data() {
     return {
@@ -73,66 +81,46 @@ export default {
     };
   },
   methods: {
-    async handleRun() {},
-    async run() {
-      let code = blocklyPython.workspaceToCode(this.blockly_woakspace);
-      console.log(code);
-      this.$toast.success("Running code");
-    },
-    setExpanded: function (value) {
-      if (value) {
-        this.$refs.displayImageFull.src = this.$refs.displayImage.src;
+    handleRun() {
+      if (!this.isRunning) {
+        this.isRunning = true;
+        this.run();
       } else {
-        this.$refs.displayImage.src = this.$refs.displayImageFull.src;
+        this.isRunning = false;
+        this.stop();
       }
-      this.isExpanded = value;
+    },
+    run() {
+      console.log("run!!!!");
+      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
+      var code = this.$refs.blockly.getCode();
+      var workspace = this.$refs.blockly.getXml();
+      //this.saveWorkspace(workspace);
+      var codeAsync = `(async () => {
+        ${code}
+        this.isRunning = false;  
+      })();`;
+      console.log(codeAsync);
+      try {
+        eval(codeAsync);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    stop() {
+      console.log("stop!!!");
     },
   },
   computed: {
     ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
-    updateXML: function () {
-      console.log("Update XML to workspace");
-      this.blockly_woakspace.clear();
-      let textToDom = Blockly.Xml.textToDom(this.blockly_xml);
-      Blockly.Xml.domToWorkspace(this.blockly_woakspace, textToDom);
-    },
-    updateOutput: function () {
-      console.log("NDisplay =");
-      console.log(this.nDisplay);
-    },
   },
-  watch: {
-    nDisplay: {
-      deep: true,
-      handler: function (newValue) {
-        console.log("Selected users changed", newValue);
-        if (newValue == false) {
-          this.url =
-            this.streamUrl + "?topic=/output/image_raw&type=ros_compressed";
-          this.$refs.displayImage.src = this.url;
-          this.$refs.displayImageFull.src = this.url;
-        } else if (newValue == true) {
-          this.url =
-            this.streamUrl +
-            "?topic=/output/image_detected&type=ros_compressed";
-          this.$refs.displayImage.src = this.url;
-          this.$refs.displayImageFull.src = this.url;
-        }
-      },
-    },
-  },
-
   mounted() {
     this.term = new Terminal({ cursorBlink: true });
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
-    this.term.write("Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ");
+    this.term.write("$ ");
     fitAddon.fit();
-  },
-  created() {},
-  beforeDestroy() {
-    this.unsubscribe();
   },
 };
 </script>
