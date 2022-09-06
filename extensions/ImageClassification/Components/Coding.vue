@@ -56,16 +56,15 @@
 </template>
 
 <script>
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 import SimulatorController from "~/components/InputConnection/SimulatorController.vue";
 import BlocklyCode from "@/components/BlocklyCode.vue";
 import Toolbox from "../Blocks/toolbox";
 import Blocks from "../Blocks/blocks";
-
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
 
-import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 export default {
   name: "BlocklyComponent",
   components: {
@@ -109,9 +108,11 @@ export default {
     },
     stop() {
       console.log("stop!!!");
+      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
     },
   },
   computed: {
+    ...mapState("projects",["project"]),
     ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
   },
   mounted() {

@@ -2,7 +2,7 @@
   <div class="display-panel liveview">
     <div v-if="currentDevice == 'BROWSER'">
       <div class="config-camera-float-button">
-        <b-avatar icon="box" :size="32" button @click="$emit('openSim')"></b-avatar>
+        <b-avatar v-if="simulator" icon="box" :size="32" button @click="$emit('openSim')"></b-avatar>
         <b-avatar icon="gear-fill" :size="32" button></b-avatar>
         <b-avatar
           v-if="captureDevices.length > 1"
@@ -51,6 +51,10 @@ export default {
       type: Number,
       default: 260,
     },
+    simulator : {
+      type : Boolean,
+      default: true
+    }
   },
   data() {
     return {

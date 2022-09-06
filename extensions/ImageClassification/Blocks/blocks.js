@@ -13,7 +13,9 @@ export default (Blockly, that) => {
   Blockly.JavaScript["tfjs_classification_init_model"] = function (block) {
     var code = `
       this.term.write("Loading model\\r\\n");
-      const __model = await tf.loadLayersModel("/model/model.json");
+      //const __model = await tf.loadLayersModel("/model/model.json");
+      console.log("model url = " + this.serverUrl + "/projects/"+ this.project.project.id +"/tfjs/model.json");
+      const __model = await tf.loadLayersModel(this.serverUrl + "/projects/"+ this.project.project.id +"/tfjs/model.json");
       this.term.write("Model loaded\\r\\nLoading label : ");
       const __label_res = await fetch('/model/labels.txt');
       const __labels_text = await __label_res.text();

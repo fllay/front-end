@@ -111,9 +111,6 @@ export default {
         };
         let res = await this.addData(data);
       } else {
-        if (!this.cameraReady) {
-          return;
-        }
         let { image, thumbnail, width, height } =
           await this.$refs.camera.snap();
         let data = {
