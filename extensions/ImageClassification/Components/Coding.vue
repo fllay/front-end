@@ -8,6 +8,7 @@
             :style="{ width: currentDevice == 'BROWSER' ? '50%' : '100%' }"
             :toolbox="toolbox"
             :blocks="blocks"
+            :language="currentDevice == 'BROWSER' ? 'javascript' : 'python'"
           ></blockly-code>
           <simulator-controller
             v-if="currentDevice == 'BROWSER'"
@@ -112,8 +113,9 @@ export default {
     },
   },
   computed: {
-    ...mapState("projects",["project"]),
+    ...mapState("project", ["project"]),
     ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
+    ...mapState("server", ["url"]),
   },
   mounted() {
     this.term = new Terminal({ cursorBlink: true });

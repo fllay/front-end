@@ -18,7 +18,7 @@
         <b-button class="btn base-btn" v-b-modal.inference :disabled="!isTrained">
           Test
         </b-button>
-        <b-button class="btn base-btn" :disabled="!isTrained || isConverting" @click="downloadModel">
+        <b-button class="btn base-btn" @click="downloadModel">
           <b-spinner v-if="isConverting" small></b-spinner>
           {{isConverting? "Converting...": (currentDevice == 'ROBOT' ? "Convert" : "Download")}}
         </b-button>
