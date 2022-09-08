@@ -16,6 +16,7 @@
             ref="simulator"
             :showController="false"
             :captureKey="false"
+            :classify="result"
           ></simulator-controller>
         </div>
         <div style="height: 200px; display: flex">
@@ -78,6 +79,7 @@ export default {
       blocks: Blocks,
       logs: "",
       isRunning: false,
+      result: "",
     };
   },
   methods: {
@@ -95,11 +97,14 @@ export default {
       this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
       var code = this.$refs.blockly.getCode();
       var workspace = this.$refs.blockly.getXml();
+      localStorage.setItem("xml_workspace", workspace);
       //this.saveWorkspace(workspace);
       var codeAsync = `(async () => {
         ${code}
         this.isRunning = false;  
+        this.result = "";
         this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+        this.term.write("\\r\\nFinish\\r\\n");
       })();`;
       console.log(codeAsync);
       try {
@@ -118,13 +123,21 @@ export default {
     ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
     ...mapState("server", ["url"]),
   },
+  created() {
+    console.log("created");
+  },
   mounted() {
+    console.log("mounted");
     this.term = new Terminal({ cursorBlink: true });
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
     this.term.write("$ ");
     fitAddon.fit();
+    //TODO: load xml from project instead of localStorage
+    this.$nextTick(() => {
+      this.$refs.blockly.setWorkspace(localStorage.getItem("xml_workspace"));
+    });
   },
 };
 </script>

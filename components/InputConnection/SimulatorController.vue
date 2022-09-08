@@ -9,6 +9,9 @@
       src="/VKBuild/index.html"
       frameborder="0"
     />
+    <div v-if="classify" class="display-controller">
+      <div class="classify-result">{{ classify }}</div>
+    </div>
     <div v-if="showController" class="game-controller">
       <b-avatar
         icon="x-circle-fill"
@@ -29,9 +32,13 @@ export default {
       default: true,
     },
     captureKey: {
-      type : Boolean,
+      type: Boolean,
       default: true,
-    }
+    },
+    classify: {
+      type: String,
+      default: "",
+    },
   },
   data() {
     return {
@@ -40,7 +47,7 @@ export default {
   },
   created() {},
   mounted() {
-    if(this.captureKey){
+    if (this.captureKey) {
       this.$refs.gameInstance.contentWindow.addEventListener(
         "keyup",
         this.onKey.bind(this)
@@ -103,6 +110,23 @@ export default {
 .game-container {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+.display-controller {
+  position: absolute;
+  width: 100%;
+  border: solid green 1px;
+  top: 50%;
+  aspect-ratio: 16 / 9;
+  transform: translateY(-50%);
+}
+.classify-result {
+  width: 100%;
+  bottom: 0;
+  position: absolute;
+  text-align: center;
+  color: white;
+  background-color: #00000057;
 }
 .game-controller {
   position: absolute;

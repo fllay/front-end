@@ -92,6 +92,16 @@ export default {
     getXml() {
       return this.xml;
     },
+    setWorkspace(xml) {
+      try {
+        let dom = Blockly.Xml.textToDom(xml);
+        //this.blockly_workspace.clear();
+        Blockly.Xml.domToWorkspace(dom, Blockly.mainWorkspace);
+      } catch (err) {
+        console.log("parse xml error");
+        console.log(err);
+      }
+    },
     workspaceUpdate(event) {
       if (
         event.type == "create" ||

@@ -80,6 +80,7 @@ export default (Blockly, that) => {
       __res = await __classify(__model, __image_tensor);
       __data = __res.dataSync();
       __maxIndex = __res.argMax(1).dataSync()[0];
+      this.result = __labels[__maxIndex] + " (" + __data[__maxIndex].toFixed(3) + ")";
       this.term.write("\\rclassify result = " + __labels[__maxIndex] + ", prob = " + __data[__maxIndex].toFixed(3));
     `;
     return code;
