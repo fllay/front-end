@@ -155,12 +155,17 @@ export const actions = {
   //     data.image
   //   );
   // },
+  async exists({ state }, filename) {
+    if (!this._vm.$fs) {
+      await prepareDataset(this._vm, state.dataset);
+    }
+    return storage.exists(this._vm.$fs, filename);
+  },
   async addData({ commit, state, dispatch }, data) {
     //check existing vm
     if (!this._vm.$fs) {
       await prepareDataset(this._vm, state.dataset);
     }
-    console.log(data.image);
     await storage.writeFile(
       this._vm.$fs,
       `${state.dataset.project}/${data.id}.${data.ext}`,
@@ -208,6 +213,17 @@ export const actions = {
       this._vm.$fs,
       `${state.dataset.project}/${data.id}.${data.ext}`,
       data.image
+    );
+  },
+  async addBlobToFs({ state }, { filename, data }) {
+    //check existing vm
+    if (!this._vm.$fs) {
+      await prepareDataset(this._vm, state.dataset);
+    }
+    await storage.writeFile(
+      this._vm.$fs,
+      `${state.dataset.project}/${filename}`,
+      data
     );
   },
   async getData({ commit, state }, filename) {

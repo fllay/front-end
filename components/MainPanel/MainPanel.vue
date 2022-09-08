@@ -5,18 +5,49 @@
     <div class="left-bottom-content d-flex flex-fill position-relative">
       <div class="header-left-bar">
         <div class="proj-name">
-          {{ project.name}}
+          {{ project.name }}
         </div>
-        <div v-if="project.id" class="proj-type">Type : {{ project.projectTypeTitle }}</div>
-        
+        <div v-if="project.id" class="proj-type">
+          Type : {{ project.projectTypeTitle }}
+        </div>
+
         <div v-if="project.id" class="header-action-button">
-          <b-button :disabled="currentDevice == 'BROWSER'" @click="openWiFiModal">
-            <b-icon class="mr-1" :icon="currentDevice == 'BROWSER' ? 'wifi' : (currentWifi ? 'wifi':'wifi-off')"></b-icon>
-            {{ currentDevice == "BROWSER" ? (isOnline?"ONLINE":"OFFLINE") : currentWifi ? (currentWifi.ssid ? currentWifi.ssid : "No Internet") : "No Internet" }}
+          <b-button
+            :disabled="currentDevice == 'BROWSER'"
+            @click="openWiFiModal"
+          >
+            <b-icon
+              class="mr-1"
+              :icon="
+                currentDevice == 'BROWSER'
+                  ? 'wifi'
+                  : currentWifi
+                  ? 'wifi'
+                  : 'wifi-off'
+              "
+            ></b-icon>
+            {{
+              currentDevice == "BROWSER"
+                ? isOnline
+                  ? "ONLINE"
+                  : "OFFLINE"
+                : currentWifi
+                ? currentWifi.ssid
+                  ? currentWifi.ssid
+                  : "No Internet"
+                : "No Internet"
+            }}
           </b-button>
 
-          <b-button @click="onToggleDevice" :disabled="initialDevice == 'BROWSER'">
-            <b-icon v-if="currentDevice == 'ROBOT'" class="mr-1" icon="cpu"></b-icon>
+          <b-button
+            @click="onToggleDevice"
+            :disabled="initialDevice == 'BROWSER'"
+          >
+            <b-icon
+              v-if="currentDevice == 'ROBOT'"
+              class="mr-1"
+              icon="cpu"
+            ></b-icon>
             <b-icon v-else class="mr-1" icon="laptop"></b-icon>
             {{ currentDevice }}
           </b-button>
@@ -61,6 +92,7 @@
         <li
           :class="{
             current: selectedMenu == 4,
+            inactive: project.tfjs == '',
           }"
           @click="handleTabChange(4)"
         >
@@ -93,77 +125,100 @@
         </div>
       </div>
       <div v-if="selectedMenu === 1" class="d-contents">
-        <async-component v-if="!project.extension.instructions.capture" target="./Instructions/CaptureInstruction.vue"></async-component>
-        <extension-async-component v-else :target="project.extension.instructions.capture"></extension-async-component>
+        <async-component
+          v-if="!project.extension.instructions.capture"
+          target="./Instructions/CaptureInstruction.vue"
+        ></async-component>
+        <extension-async-component
+          v-else
+          :target="project.extension.instructions.capture"
+        ></extension-async-component>
       </div>
       <div v-if="selectedMenu === 2" class="d-contents">
-        <async-component v-if="!project.extension.instructions.annotate" target="./Instructions/AnnatateInstruction.vue"></async-component>
-        <extension-async-component v-else :target="project.extension.instructions.annotate"></extension-async-component>
+        <async-component
+          v-if="!project.extension.instructions.annotate"
+          target="./Instructions/AnnatateInstruction.vue"
+        ></async-component>
+        <extension-async-component
+          v-else
+          :target="project.extension.instructions.annotate"
+        ></extension-async-component>
       </div>
       <div v-if="selectedMenu === 3" class="d-contents">
-        <async-component v-if="!project.extension.instructions.train" target="./Instructions/TrainInstruction.vue"></async-component>
-        <extension-async-component v-else :target="project.extension.instructions.train"></extension-async-component>
+        <async-component
+          v-if="!project.extension.instructions.train"
+          target="./Instructions/TrainInstruction.vue"
+        ></async-component>
+        <extension-async-component
+          v-else
+          :target="project.extension.instructions.train"
+        ></extension-async-component>
       </div>
       <div v-if="selectedMenu === 4" class="d-contents">
-        <async-component v-if="!project.extension.instructions.coding" target="./Instructions/CodingInstruction.vue"></async-component>
-        <extension-async-component v-else :target="project.extension.instructions.coding"></extension-async-component>
+        <async-component
+          v-if="!project.extension.instructions.coding"
+          target="./Instructions/CodingInstruction.vue"
+        ></async-component>
+        <extension-async-component
+          v-else
+          :target="project.extension.instructions.coding"
+        ></extension-async-component>
       </div>
     </div>
   </div>
 </template>
 <script>
-import { mapState, mapActions, mapMutations,mapGetters  } from 'vuex';
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
 import AsyncComponent from "~/components/AsyncComponent.vue";
 import ExtensionAsyncComponent from "~/components/ExtensionAsyncComponent.vue";
 
 export default {
-  components :{
+  components: {
     AsyncComponent,
-    ExtensionAsyncComponent
+    ExtensionAsyncComponent,
   },
-  props:["selectedMenu"],
-  model : {
-    prop : "selectedMenu",
-    event : "menuChange"
+  props: ["selectedMenu"],
+  model: {
+    prop: "selectedMenu",
+    event: "menuChange",
   },
-  data(){
+  data() {
     return {
-      exts : this.$extensions
+      exts: this.$extensions,
     };
   },
-  created(){
-  },
+  created() {},
   computed: {
-    ...mapState('project', [
-      'project',
-      'listProjectModal',
-      'isLoading',
-      'isSaving',
+    ...mapState("project", [
+      "project",
+      "listProjectModal",
+      "isLoading",
+      "isSaving",
+      "labelFile",
     ]),
-    ...mapState(['currentDevice','initialDevice','isRunning','currentWifi']),
-    ...mapGetters("dataset",['dataLength',"getLabeledLength"]),
-    isOnline(){
+    ...mapState(["currentDevice", "initialDevice", "isRunning", "currentWifi"]),
+    ...mapGetters("dataset", ["dataLength", "getLabeledLength"]),
+    isOnline() {
       return window.navigator.onLine;
     },
   },
-  methods : {
-    ...mapMutations(['setDevice']),
-    openWiFiModal(){
+  methods: {
+    ...mapMutations(["setDevice"]),
+    openWiFiModal() {
       console.log("connect wifi");
-      this.$bvModal.show('wifi_conn');
+      this.$bvModal.show("wifi_conn");
     },
-    handleTabChange(tabIndex){
+    handleTabChange(tabIndex) {
       //this.menu = tabIndex;
       this.$emit("menuChange", tabIndex);
     },
-    onToggleDevice(){
-      if(this.currentDevice == "BROWSER"){
+    onToggleDevice() {
+      if (this.currentDevice == "BROWSER") {
         this.setDevice("ROBOT");
-      }else{
+      } else {
         this.setDevice("BROWSER");
       }
-    }
+    },
   },
-  
-}
+};
 </script>

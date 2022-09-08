@@ -66,6 +66,7 @@ import Blocks from "../Blocks/blocks";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
+import axios from "axios";
 
 export default {
   name: "BlocklyComponent",
@@ -77,6 +78,7 @@ export default {
     return {
       toolbox: Toolbox,
       blocks: Blocks,
+      model: null,
       logs: "",
       isRunning: false,
       result: "",
@@ -92,16 +94,70 @@ export default {
         this.stop();
       }
     },
+    concatenateArrayBuffers(buffers) {
+      if (buffers.length === 1) {
+        return buffers[0];
+      }
+      var totalByteLength = 0;
+      buffers.forEach(function (buffer) {
+        totalByteLength += buffer.byteLength;
+      });
+      var temp = new Uint8Array(totalByteLength);
+      var offset = 0;
+      buffers.forEach(function (buffer) {
+        temp.set(new Uint8Array(buffer), offset);
+        offset += buffer.byteLength;
+      });
+      return temp.buffer;
+    },
+    async initModel() {
+      var modelJson = await axios.get(this.project.tfjs);
+      var weights = [];
+      let baseModelPath = this.project.tfjs.substring(
+        0,
+        this.project.tfjs.lastIndexOf("/")
+      );
+      let downloadPromises = [];
+      for (let binFile of modelJson.data.weightsManifest[0].paths) {
+        let w = axios.get(baseModelPath + "/" + binFile, {
+          responseType: "arraybuffer",
+        });
+        downloadPromises.push(w);
+      }
+      let downloadedWeight = await Promise.all(downloadPromises);
+      weights = downloadedWeight.map((el) => el.data);
+      let weightData = this.concatenateArrayBuffers(weights);
+      this.model = await tf.loadLayersModel(
+        tf.io.fromMemory(
+          modelJson.data.modelTopology,
+          modelJson.data.weightsManifest[0].weights,
+          weightData
+        )
+      );
+    },
+    async getLabels() {
+      const __label_res = await axios.get(this.project.labelFile);
+      const __labels_text = __label_res.data;
+      let labels = __labels_text
+        .replaceAll("\r", "")
+        .split("\n")
+        .map((el) => el.trim())
+        .filter((el) => el);
+      console.log(labels);
+      return labels;
+    },
     run() {
       console.log("run!!!!");
+      //========== load tfjs model ===========//
       this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
       var code = this.$refs.blockly.getCode();
       var workspace = this.$refs.blockly.getXml();
       localStorage.setItem("xml_workspace", workspace);
       //this.saveWorkspace(workspace);
       var codeAsync = `(async () => {
+        this.term.write("Running ...\\r\\n");
         ${code}
-        this.isRunning = false;  
+        this.isRunning = false;
         this.result = "";
         this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
         this.term.write("\\r\\nFinish\\r\\n");
@@ -123,9 +179,6 @@ export default {
     ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
     ...mapState("server", ["url"]),
   },
-  created() {
-    console.log("created");
-  },
   mounted() {
     console.log("mounted");
     this.term = new Terminal({ cursorBlink: true });
@@ -134,6 +187,7 @@ export default {
     this.term.open(this.$refs.terminal);
     this.term.write("$ ");
     fitAddon.fit();
+    console.log("model tfjs path : ", this.project.tfjs);
     //TODO: load xml from project instead of localStorage
     this.$nextTick(() => {
       this.$refs.blockly.setWorkspace(localStorage.getItem("xml_workspace"));

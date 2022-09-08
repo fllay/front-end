@@ -4,7 +4,7 @@ export default {
       window.requestFileSystem =
         window.requestFileSystem || window.webkitRequestFileSystem;
       let type = TEMPORARY;
-      let targetBytes = 1024 * 1024 * 800; //500MB
+      let targetBytes = 1024 * 1024 * 800; //800MB
       if (type == TEMPORARY) {
         window.requestFileSystem(
           TEMPORARY,
@@ -56,6 +56,25 @@ export default {
         }
       );
     });
+  },
+  async exists(fs, filename) {
+    return new Promise((resolve, reject) => {
+      fs.root.getFile(
+        filename,
+        { create: false },
+        (entry) => {
+          return resolve(entry);
+        },
+        (err) => {
+          reject(err);
+        }
+      );
+    });
+    //fs.root.getDirectory('Documents', { create: true }, (directoryEntry) => {
+    //directoryEntry.isFile === false
+    //directoryEntry.isDirectory === true
+    //directoryEntry.name === 'Documents'
+    //directoryEntry.fullPath === '/Documents'
   },
   async writeFile(fs, filename, data) {
     return new Promise((resolve, reject) => {

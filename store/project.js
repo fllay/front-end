@@ -1,4 +1,5 @@
 import axios from "axios";
+import { file } from "jszip";
 export const state = () => ({
   project: {
     name: "",
@@ -9,9 +10,14 @@ export const state = () => ({
     dataset: [],
     labels: [],
     model: null,
+    labelFile: "",
+    pretrained: "",
+    tfjs: "",
+    edgetpu: "",
     options: {}, // ค่าจาก config options ของโปรเจค
     code: "",
     workspace: "",
+    anchor: [],
   },
   projects: [],
   isLoading: false,
@@ -55,12 +61,22 @@ export const mutations = {
     state.project.model = model;
   },
   saveCode(state, code) {
-    console.log("lllllll");
     state.project.code = code;
-    console.log("sssssssssssssssss");
   },
   saveWorkspace(state, ws) {
     state.project.workspace = ws;
+  },
+  savePretrained(state, filename) {
+    state.project.pretrained = filename;
+  },
+  saveTfjs(state, filename) {
+    state.project.tfjs = filename;
+  },
+  saveEdgeTPU(state, filename) {
+    state.project.edgetpu = filename;
+  },
+  saveLabelFile(state, filename) {
+    state.project.labelFile = filename;
   },
 };
 export const getters = {

@@ -13,19 +13,15 @@ export default (Blockly, that) => {
   Blockly.JavaScript["tfjs_classification_init_model"] = function (block) {
     var code = `
       this.term.write("Loading model\\r\\n");
-      //const __model = await tf.loadLayersModel("/model/model.json");
-      console.log("model url = " + this.url + "/projects/"+ this.project.id +"/output/tfjs/model.json");
-      const __model = await tf.loadLayersModel(this.url + "/projects/"+ this.project.id +"/output/tfjs/model.json");
+      await this.initModel();
       this.term.write("Model loaded\\r\\nLoading label : ");
-      const __label_res = await fetch(this.url + "/projects/"+ this.project.id + "/output/labels.txt");
-      const __labels_text = await __label_res.text();
-      const __labels = __labels_text.replaceAll("\\r","").split('\\n');
+      const __labels = await this.getLabels();
       this.term.write(__labels.join(",") + "\\r\\n");
-      let inputShape = __model.layers[0].inputSpec[0].shape;
+      let inputShape = this.model.layers[0].inputSpec[0].shape;
       this.term.write("Model Input Shape : " + inputShape.join(",") + "\\r\\n");
       this.term.write("Preloading model\\r\\n");
       const zeroTensor = tf.zeros([1, inputShape[1], inputShape[2], inputShape[3]], 'int32');
-      const result = await __model.predict(zeroTensor);
+      const result = await this.model.predict(zeroTensor);
       const res = await result.data();
       result.dispose();
       zeroTensor.dispose();
@@ -77,7 +73,7 @@ export default (Blockly, that) => {
       __raw_image = "data:image/jpeg;base64," + this.$refs.simulator.$refs.gameInstance.contentWindow.ImageBase64();
       __image = await load_image(__raw_image);
       __image_tensor = await tf.browser.fromPixels(__image);
-      __res = await __classify(__model, __image_tensor);
+      __res = await __classify(this.model, __image_tensor);
       __data = __res.dataSync();
       __maxIndex = __res.argMax(1).dataSync()[0];
       this.result = __labels[__maxIndex] + " (" + __data[__maxIndex].toFixed(3) + ")";

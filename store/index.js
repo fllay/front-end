@@ -3,7 +3,7 @@ import axios from "axios";
 
 const robotIp =
   location.hostname === "192.168.2.1" ||
-  location.hostname === "localhost" ||
+  //location.hostname === "localhost" ||
   location.hostname.startsWith("192.168.") ||
   location.hostname.startsWith("10.0.");
 
@@ -16,7 +16,7 @@ export const state = () => ({
   currentWifi: null,
   isRunning: false,
   selectedMenu: 0,
-  //------  Image streaming data from Unity 
+  //------  Image streaming data from Unity
   imageBytes: null,
   //----- save project ------//
   saving: false,
