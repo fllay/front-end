@@ -98,8 +98,40 @@ export const actions = {
           rawDataset.file(mfccFile, mfccData);
         }
         let progress = ((i + 1) / datasets.length) * 100;
-        commit("setSavingProgress", progress);
+        commit("setSavingProgress", progress - 5);
       }
+      //---------- tfjs -----------//
+      let modelJsonFile = await dispatch("dataset/getDataAsFile", "model.json");
+      let jsonText = await modelJsonFile.text();
+      let modelJson = JSON.parse(jsonText);
+      zip.file("model.json", modelJsonFile);
+      commit("setSavingProgress", 95);
+      for (let binFileName of modelJson.weightsManifest[0].paths) {
+        let binFile = await dispatch("dataset/getDataAsFile", binFileName);
+        zip.file(binFileName, binFile);
+      }
+      commit("setSavingProgress", 96);
+      //---------- model h5 ----------//
+      let modelH5File = await dispatch("dataset/getDataAsFile", "model.h5");
+      zip.file("model.h5", modelH5File);
+      commit("setSavingProgress", 97);
+      //---------- model edge tpu --------//
+      let modelEdgeTpu = await dispatch(
+        "dataset/getDataAsFile",
+        "model_edgetpu.tflite"
+      );
+      zip.file("model_edgetpu.tflite", modelEdgeTpu);
+      commit("setSavingProgress", 98);
+      //---------- label txt ----------//
+      let labelFileEntry = await dispatch(
+        "dataset/exists",
+        `${rootState.project.project.id}/labels.txt`
+      );
+      if (labelFileEntry.isFile === true) {
+        let labelFile = await dispatch("dataset/getDataAsFile", "labels.txt");
+        zip.file("labels.txt", labelFile);
+      }
+      commit("setSavingProgress", 99);
       //---------- save output (model) ---------//
       zip
         .generateAsync({
