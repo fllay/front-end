@@ -99,6 +99,7 @@ export default {
       var codeAsync = `(async () => {
         ${code}
         this.isRunning = false;  
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
       })();`;
       console.log(codeAsync);
       try {
