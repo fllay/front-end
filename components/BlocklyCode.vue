@@ -103,10 +103,12 @@ export default {
       }
     },
     workspaceUpdate(event) {
+      console.log(event.type);
       if (
         event.type == "create" ||
         event.type == "delete" ||
-        event.type == "move"
+        event.type == "move" ||
+        event.type == "change"
       ) {
         let gen = null;
         if (this.language == "python") {

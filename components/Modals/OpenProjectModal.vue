@@ -165,16 +165,58 @@ export default {
           console.log("cleared");
           for (let file of files) {
             this.progress += 1;
-            this.percentage = Math.round((this.progress / files.length) * 100);
+            this.percentage =
+              Math.round((this.progress / files.length) * 100) - 5;
             await this.addFileToFs({ projectId: projectId, file: file });
           }
+          //----------- tfjs ----------//
+          let tfjsModelFile = this.files.find((el) => el.name == "model.json");
+          if (tfjsModelFile) {
+            await this.addFileToFs({
+              projectId: projectId,
+              file: tfjsModelFile,
+            });
+            for (let binFile of this.files.filter((el) =>
+              el.name.endsWith(".bin")
+            )) {
+              await this.addFileToFs({ projectId: projectId, file: binFile });
+            }
+          }
+          this.percentage = 96.0;
+          //----------- model h5 ---------// ? TODO: จำเป็นไหม
+          let modelH5 = this.files.find((el) => el.name == "model.ht");
+          if (modelH5) {
+            await this.addFileToFs({
+              projectId: projectId,
+              file: modelH5,
+            });
+          }
+          this.percentage = 97.0;
+          //----------- model edgetpu -------// ? TODO: จำเป็นไหม
+          let modelEdgeTpu = this.files.find(
+            (el) => el.name == "model_edgetpu.tflite"
+          );
+          if (modelEdgeTpu) {
+            await this.addFileToFs({
+              projectId: projectId,
+              file: modelEdgeTpu,
+            });
+          }
+          this.percentage = 98.0;
+          //----------- labels --------//
+          let labels = this.files.find((el) => el.name == "labels.txt");
+          if (labels) {
+            await this.addFileToFs({
+              projectId: projectId,
+              file: modelEdgeTpu,
+            });
+          }
+          this.percentage = 99.0;
+
+          //--------- restore data ---------//
           this.restoreDataset(projectJson.dataset.dataset);
           this.setProject(projectJson.project.project); //assign new dataset
-          //----------- tfjs ----------//
-          //----------- model h5 ---------// ? TODO: จำเป็นไหม
-          //----------- model edgetpu -------// ? TODO: จำเป็นไหม
-          //----------- labels --------//
-          
+
           this.step = 3;
           this.$toast.success("เปิดโปรเจคและนำเข้าเสร็จเรียบร้อย");
         } else if (this.step == 3) {
