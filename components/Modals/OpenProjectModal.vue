@@ -181,6 +181,8 @@ export default {
             )) {
               await this.addFileToFs({ projectId: projectId, file: binFile });
             }
+          } else {
+            projectJson.project.project.tfjs = "";
           }
           this.percentage = 96.0;
           //----------- model h5 ---------// ? TODO: จำเป็นไหม
@@ -190,6 +192,8 @@ export default {
               projectId: projectId,
               file: modelH5,
             });
+          } else {
+            projectJson.project.project.pretrained = "";
           }
           this.percentage = 97.0;
           //----------- model edgetpu -------// ? TODO: จำเป็นไหม
@@ -201,6 +205,8 @@ export default {
               projectId: projectId,
               file: modelEdgeTpu,
             });
+          } else {
+            projectJson.project.project.edgetpu = "";
           }
           this.percentage = 98.0;
           //----------- labels --------//
@@ -210,6 +216,8 @@ export default {
               projectId: projectId,
               file: modelEdgeTpu,
             });
+          } else {
+            projectJson.project.project.labelFile = "";
           }
           this.percentage = 99.0;
 
