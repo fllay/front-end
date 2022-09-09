@@ -79,7 +79,6 @@ export default {
       toolbox: Toolbox,
       blocks: Blocks,
       model: null,
-      logs: "",
       isRunning: false,
       result: "",
     };
@@ -93,22 +92,6 @@ export default {
         this.isRunning = false;
         this.stop();
       }
-    },
-    concatenateArrayBuffers(buffers) {
-      if (buffers.length === 1) {
-        return buffers[0];
-      }
-      var totalByteLength = 0;
-      buffers.forEach(function (buffer) {
-        totalByteLength += buffer.byteLength;
-      });
-      var temp = new Uint8Array(totalByteLength);
-      var offset = 0;
-      buffers.forEach(function (buffer) {
-        temp.set(new Uint8Array(buffer), offset);
-        offset += buffer.byteLength;
-      });
-      return temp.buffer;
     },
     async initModel() {
       var modelJson = await axios.get(this.project.tfjs);
@@ -126,7 +109,7 @@ export default {
       }
       let downloadedWeight = await Promise.all(downloadPromises);
       weights = downloadedWeight.map((el) => el.data);
-      let weightData = this.concatenateArrayBuffers(weights);
+      let weightData = this.$helper.concatenateArrayBuffers(weights);
       this.model = await tf.loadLayersModel(
         tf.io.fromMemory(
           modelJson.data.modelTopology,

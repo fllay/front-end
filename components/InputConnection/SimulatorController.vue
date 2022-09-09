@@ -1,5 +1,23 @@
 <template>
   <div class="game-container">
+    <div v-show="classify || bbox.length" class="display-controller">
+      <div v-show="bbox.length" class="bboxes" ref="boxContainer">
+        <div
+          v-for="(box, i) in boxes"
+          :key="i"
+          class="bbox"
+          :style="{
+            left: box.x1 + 'px',
+            top: box.y1 + 'px',
+            width: box.x2 - box.x1 + 'px',
+            height: box.y2 - box.y1 + 'px',
+          }"
+        >
+          <span class="label-box">{{ box.label }}</span>
+        </div>
+      </div>
+      <div class="classify-result">{{ classify }}</div>
+    </div>
     <iframe
       ref="gameInstance"
       width="100%"
@@ -9,9 +27,7 @@
       src="/VKBuild/index.html"
       frameborder="0"
     />
-    <div v-if="classify" class="display-controller">
-      <div class="classify-result">{{ classify }}</div>
-    </div>
+
     <div v-if="showController" class="game-controller">
       <b-avatar
         icon="x-circle-fill"
@@ -39,10 +55,15 @@ export default {
       type: String,
       default: "",
     },
+    bbox: {
+      type: Array,
+      default: [],
+    },
   },
   data() {
     return {
       isStreaming: false,
+      boxes: [],
     };
   },
   created() {},
@@ -56,6 +77,24 @@ export default {
   },
   computed: {
     ...mapState(["currentDevice", "initialDevice", "streamUrl"]),
+  },
+  watch: {
+    bbox: function (newValue) {
+      if (newValue && newValue.length) {
+        this.boxes = newValue.map((el) => {
+          let cWidth = this.$refs.boxContainer.clientWidth / 320;
+          let cHeight = this.$refs.boxContainer.clientHeight / 240;
+          return {
+            x1: el.left * cWidth,
+            y1: el.top * cHeight,
+            x2: el.right * cWidth,
+            y2: el.bottom * cHeight,
+            label: el.class,
+            prob: el.score,
+          };
+        });
+      }
+    },
   },
   methods: {
     onKey(e) {
@@ -113,6 +152,7 @@ export default {
   position: relative;
 }
 .display-controller {
+  pointer-events: none;
   position: absolute;
   width: 100%;
   border: solid green 1px;
@@ -135,5 +175,24 @@ export default {
   flex-wrap: wrap;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+.bboxes {
+  width: 24%;
+  height: 32%;
+  right: 0;
+  position: absolute;
+  aspect-ratio: 4 / 3;
+}
+.bbox {
+  display: block;
+  position: absolute;
+  border-width: 2px;
+  border-color: green;
+  border-style: solid;
+}
+.label-box {
+  color: black;
+  font-size: 11px;
+  background-color: #fff;
 }
 </style>

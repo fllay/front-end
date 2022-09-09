@@ -103,7 +103,6 @@ export default {
       }
     },
     workspaceUpdate(event) {
-      console.log(event.type);
       if (
         event.type == "create" ||
         event.type == "delete" ||

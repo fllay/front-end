@@ -2,21 +2,58 @@
   <div class="blockly-module">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel">
-        <div class="d-flex flex-fill flex-column" style="background-color: white">
-          <blockly-code ref="blockly"></blockly-code>
+        <div class="d-flex flex-fill flex-row" style="background-color: white">
+          <blockly-code
+            ref="blockly"
+            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '100%' }"
+            :toolbox="toolbox"
+            :blocks="blocks"
+            :language="currentDevice == 'BROWSER' ? 'javascript' : 'python'"
+          ></blockly-code>
+          <simulator-controller
+            v-if="currentDevice == 'BROWSER'"
+            style="width: 50%"
+            ref="simulator"
+            :showController="false"
+            :captureKey="false"
+            :bbox="result"
+          ></simulator-controller>
         </div>
-        <div style="height: 200px; display: flex;">
-          <div style="width: 100%; height: 100%; padding: 5px; background-color: black;" id="terminal" ref="terminal"></div>
-          <div style="width: 200px; height: 100%;text-align: center;padding-top: 46px; background-color: black;">
+        <div style="height: 200px; display: flex">
+          <div
+            style="
+              width: 100%;
+              height: 100%;
+              padding: 5px;
+              background-color: black;
+            "
+            id="terminal"
+            ref="terminal"
+          ></div>
+          <div
+            style="
+              width: 200px;
+              height: 100%;
+              text-align: center;
+              padding-top: 46px;
+              background-color: black;
+            "
+          >
             <div class="button">
-              <button
-                pill
-                v-on:click="handleRun"
-                class="btn-run op-btn"
-              >
+              <button pill v-on:click="handleRun" class="btn-run op-btn">
                 <span class="ico">
-                  <img v-if="!isRunning" src="~/assets/images/UI/svg/Group 80.svg" alt="" srcset=""/>
-                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" alt="" srcset=""/>
+                  <img
+                    v-if="!isRunning"
+                    src="~/assets/images/UI/svg/Group 80.svg"
+                    alt=""
+                    srcset=""
+                  />
+                  <img
+                    v-else
+                    src="~/assets/images/UI/svg/Group 82.svg"
+                    alt=""
+                    srcset=""
+                  />
                 </span>
               </button>
             </div>
@@ -28,70 +65,137 @@
 </template>
 
 <script>
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import io from "socket.io-client";
-
-import "xterm/css/xterm.css";
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
+import SimulatorController from "~/components/InputConnection/SimulatorController.vue";
 import BlocklyCode from "@/components/BlocklyCode.vue";
+import Toolbox from "../Blocks/toolbox";
+import Blocks from "../Blocks/blocks";
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
+import "xterm/css/xterm.css";
+import axios from "axios";
+import YOLO from "../Utils/yolo";
 
-import { mapState, mapActions, mapMutations , mapGetters } from "vuex";
 export default {
   name: "BlocklyComponent",
   components: {
-    BlocklyCode
+    BlocklyCode,
+    SimulatorController,
   },
   data() {
     return {
-      isRunning : false,
-      logs: "",
-      s_result: "",
-      term: null,
-      socket : null
+      toolbox: Toolbox,
+      blocks: Blocks,
+      model: null,
+      isRunning: false,
+      result: [],
     };
   },
   methods: {
-    async handleRun(){
-
+    handleRun() {
+      if (!this.isRunning) {
+        this.isRunning = true;
+        this.run();
+      } else {
+        this.isRunning = false;
+        this.stop();
+      }
     },
-    async run(){
-      let code = blocklyPython.workspaceToCode(this.blockly_woakspace);
-      console.log(code);
-      this.$toast.success("Running code");
+    async initModel() {
+      var modelJson = await axios.get(this.project.tfjs);
+      var weights = [];
+      let baseModelPath = this.project.tfjs.substring(
+        0,
+        this.project.tfjs.lastIndexOf("/")
+      );
+      let downloadPromises = [];
+      for (let binFile of modelJson.data.weightsManifest[0].paths) {
+        let w = axios.get(baseModelPath + "/" + binFile, {
+          responseType: "arraybuffer",
+        });
+        downloadPromises.push(w);
+      }
+      let downloadedWeight = await Promise.all(downloadPromises);
+      weights = downloadedWeight.map((el) => el.data);
+      let weightData = this.$helper.concatenateArrayBuffers(weights);
+      this.model = await tf.loadLayersModel(
+        tf.io.fromMemory(
+          modelJson.data.modelTopology,
+          modelJson.data.weightsManifest[0].weights,
+          weightData
+        )
+      );
+    },
+    async getLabels() {
+      const __label_res = await axios.get(this.project.labelFile);
+      const __labels_text = __label_res.data;
+      let labels = __labels_text
+        .replaceAll("\r", "")
+        .split("\n")
+        .map((el) => el.trim())
+        .filter((el) => el);
+      console.log(labels);
+      return labels;
+    },
+    run() {
+      console.log("run!!!!");
+      //========== load tfjs model ===========//
+      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
+      var code = this.$refs.blockly.getCode();
+      var workspace = this.$refs.blockly.getXml();
+      localStorage.setItem("xml_workspace", workspace);
+      const yolo = YOLO;
+      //this.saveWorkspace(workspace);
+      var codeAsync = `(async () => {
+        this.term.write("Running ...\\r\\n");
+        ${code}
+        this.isRunning = false;
+        this.result = [];
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+        this.term.write("\\r\\nFinish\\r\\n");
+      })();`;
+      console.log(codeAsync);
+      try {
+        eval(codeAsync);
+      } catch (error) {
+        this.isRunning = false;
+        console.log(error);
+      }
+    },
+    stop() {
+      console.log("stop!!!");
+      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
     },
   },
   computed: {
-    ...mapState(["currentDevice","serverUrl","tarminalUrl","streamUrl"]),
-  },
-  watch: {
-    
+    ...mapState("project", ["project"]),
+    ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
+    ...mapState("server", ["url"]),
   },
   mounted() {
-    this.term = new Terminal({ cursorBlink: true });        
+    this.term = new Terminal({ cursorBlink: true });
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
-    this.term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+    this.term.write("$ ");
     fitAddon.fit();
-    this.socket = io(this.tarminalUrl); //.connect();
-    this.socket.on('connect', function() {
-      this.term.write('\r\n*** Connected to backend ***\r\n');
+    //TODO: load xml from project instead of localStorage
+    this.$nextTick(() => {
+      this.$refs.blockly.setWorkspace(localStorage.getItem("xml_workspace"));
     });
-    this.term.onKey(function (ev) {
-      this.socket.emit('data', ev.key);
-    });
-    this.socket.on('data', function(data) {
-      this.term.write(data);
-    });
-    this.socket.on('disconnect', function() {
-      this.term.write('\r\n*** Disconnected from backend ***\r\n');
-    });
-  },
-  created() {
-    
-  },
-  beforeDestroy() {
-    //this.unsubscribe();
+    // this.socket = io(this.tarminalUrl); //.connect();
+    // this.socket.on("connect", function () {
+    //   this.term.write("\r\n*** Connected to backend ***\r\n");
+    // });
+    // this.term.onKey(function (ev) {
+    //   this.socket.emit("data", ev.key);
+    // });
+    // this.socket.on("data", function (data) {
+    //   this.term.write(data);
+    // });
+    // this.socket.on("disconnect", function () {
+    //   this.term.write("\r\n*** Disconnected from backend ***\r\n");
+    // });
   },
 };
 </script>
@@ -115,7 +219,7 @@ ul {
   list-style: none;
   padding: 0;
 }
-.button{
+.button {
   .btn-run {
     img {
       width: 100px;
@@ -154,8 +258,7 @@ ul {
     height: 100%;
     width: 100%;
   }
-  
-  
+
   .side-panel {
     padding: 15px;
     position: absolute;
