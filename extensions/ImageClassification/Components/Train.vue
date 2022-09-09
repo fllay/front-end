@@ -124,7 +124,7 @@ export default {
     downloadAndSave: async function (url, filename) {
       let file = await this.downloadFile(url);
       if (file) {
-        this.addBlobToFs({
+        await this.addBlobToFs({
           data: file,
           filename: filename,
         });

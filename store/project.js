@@ -17,7 +17,7 @@ export const state = () => ({
     options: {}, // ค่าจาก config options ของโปรเจค
     code: "",
     workspace: "",
-    anchor: [],
+    anchors: [],
   },
   projects: [],
   isLoading: false,
@@ -77,6 +77,9 @@ export const mutations = {
   },
   saveLabelFile(state, filename) {
     state.project.labelFile = filename;
+  },
+  saveAnchors(state, anchors) {
+    state.project.anchors = anchors;
   },
 };
 export const getters = {

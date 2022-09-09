@@ -92,25 +92,120 @@ export default {
   },
   methods: {
     ...mapMutations("server", ["setURL", "setTrained"]),
+    ...mapMutations("project", [
+      "savePretrained",
+      "saveTfjs",
+      "saveEdgeTPU",
+      "saveLabelFile",
+      "saveAnchors",
+    ]),
     ...mapActions("server", ["connect", "convert_model"]),
+    ...mapActions("dataset", ["addBlobToFs", "exists"]),
     openColab: () => {
       window.open(
         "https://colab.research.google.com/drive/11t5yJUNjLZwAb_926Izrw2NrqhWIZzZX",
         "_blank"
       );
     },
+    downloadFile: async function (url) {
+      try {
+        let tempFile = await axios.get(url, {
+          responseType: "blob",
+        });
+        if (tempFile.status == 200) {
+          return tempFile.data;
+        }
+      } catch (err) {
+        console.log("Failed to download : ", url);
+        console.log(err);
+        throw "Fail to download : " + url;
+      }
+    },
+    downloadAndSave: async function (url, filename) {
+      let file = await this.downloadFile(url);
+      if (file) {
+        await this.addBlobToFs({
+          data: file,
+          filename: filename,
+        });
+      }
+    },
+    downloadTfjs: async function (projectId) {
+      let tfjsModelBasePath = `${this.url}/projects/${projectId}/output/tfjs`;
+      let modelJson = await axios.get(`${tfjsModelBasePath}/model.json`);
+      if (
+        modelJson.status == 200 &&
+        modelJson.data.weightsManifest &&
+        modelJson.data.weightsManifest.length == 1
+      ) {
+        for (let binFile of modelJson.data.weightsManifest[0].paths) {
+          await this.downloadAndSave(
+            `${tfjsModelBasePath}/${binFile}`,
+            binFile
+          );
+        }
+      }
+      await this.downloadAndSave(
+        `${tfjsModelBasePath}/model.json`,
+        "model.json"
+      );
+      let modelEntry = await this.exists(`${projectId}/model.json`);
+      if (modelEntry.isFile === true) {
+        this.saveTfjs(this.getBaseURL + "/model.json");
+      }
+    },
     downloadModel: async function () {
-      let res = await this.convert_model();
-      console.log(this.url);
-      console.log(this.serverUrl);
+      let res = true; // await this.convert_model();
+      this.isDownloading = true;
       //this.$toast.success("Convert Model Finished!");
       let projectId = this.$store.state.project.project.id;
       if (res && this.currentDevice == "BROWSER") {
-        //let model_h5 = await axios.get(`${this.serverUrl}/projects/${projectId}/output/`);
-        window.open(
-          `${this.url}/download_model?project_id=${projectId}`,
-          "_blank"
-        );
+        try {
+          //============= download label =============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/labels.txt`,
+            "labels.txt"
+          );
+          let labelFileEntry = await this.exists(`${projectId}/labels.txt`);
+          if (labelFileEntry.isFile === true) {
+            this.saveLabelFile(this.getBaseURL + "/labels.txt");
+          }
+          //============= download anchors ===========//
+          let anchorsText = await axios.get(
+            `${this.url}/projects/${projectId}/output/anchors.txt`
+          );
+          let anchors = anchorsText.data.split(",").map((el) => parseFloat(el));
+          console.log("anchors : ", anchors);
+          this.saveAnchors(anchors);
+          //============= download tfjs ==============//
+          await this.downloadTfjs(projectId);
+          //============= download h5 model ============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/YOLO_best_mAP.h5`,
+            "model.h5"
+          );
+          let modelH5Entry = await this.exists(`${projectId}/model.h5`);
+          if (modelH5Entry.isFile === true) {
+            this.savePretrained(this.getBaseURL + "/model.h5");
+          }
+          //============= download edgetpu =============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/YOLO_best_mAP_edgetpu.tflite`,
+            "model_edgetpu.tflite"
+          );
+          let modelEdgeEntry = await this.exists(
+            `${projectId}/model_edgetpu.tflite`
+          );
+          if (modelEdgeEntry.isFile === true) {
+            this.saveEdgeTPU(this.getBaseURL + "/model_edgetpu.tflite");
+          }
+          this.$toast.success(
+            "All model saved to project, save project to download all files"
+          );
+        } catch (err) {
+          console.log("download model failed : ", err);
+          this.$toast.error(err.message);
+        }
       } else if (
         res &&
         this.currentDevice == "ROBOT" &&
@@ -125,6 +220,7 @@ export default {
           }
         );
       }
+      this.isDownloading = false;
     },
     connectServer: function (url) {
       console.log("connect server");
@@ -150,6 +246,7 @@ export default {
   mounted() {},
   updated() {},
   computed: {
+    ...mapGetters("dataset", ["projectName", "getBaseURL", "getFileExt"]),
     ...mapState(["currentDevice", "serverUrl"]),
     ...mapState("server", [
       "url",
