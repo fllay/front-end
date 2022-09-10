@@ -239,16 +239,11 @@ export default {
     },
     handleInference: function () {},
   },
-  directives: {},
-  created() {
-    //console.log("created");
-  },
   mounted() {
     if (this.currentDevice == "ROBOT") {
       this.connectServer(this.serverUrl);
     }
   },
-  updated() {},
   computed: {
     ...mapGetters("dataset", ["projectName", "getBaseURL", "getFileExt"]),
     ...mapState(["currentDevice", "serverUrl"]),

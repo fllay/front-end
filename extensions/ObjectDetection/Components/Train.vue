@@ -242,9 +242,6 @@ export default {
     },
     handleInference: function () {},
   },
-  directives: {},
-  mounted() {},
-  updated() {},
   computed: {
     ...mapGetters("dataset", ["projectName", "getBaseURL", "getFileExt"]),
     ...mapState(["currentDevice", "serverUrl"]),

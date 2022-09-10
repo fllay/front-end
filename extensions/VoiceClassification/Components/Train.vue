@@ -156,14 +156,67 @@ export default {
     },
     downloadModel: async function () {
       let res = await this.convert_model();
-      if (res) {
-        window.open(
-          this.url +
-            "/download_model?project_id=" +
-            this.$store.state.project.project.id,
-          "_blank"
+      this.isDownloading = true;
+      //this.$toast.success("Convert Model Finished!");
+      if (res && this.currentDevice == "BROWSER") {
+        try {
+          let projectId = this.$store.state.project.project.id;
+          //============= download label =============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/labels.txt`,
+            "labels.txt"
+          );
+          let labelFileEntry = await this.exists(`${projectId}/labels.txt`);
+          if (labelFileEntry.isFile === true) {
+            this.saveLabelFile(this.getBaseURL + "/labels.txt");
+          }
+          //============= download tfjs ==============//
+          await this.downloadTfjs(projectId);
+          //============= download h5 model ============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/Classifier_best_val_accuracy.h5`,
+            "model.h5"
+          );
+          let modelH5Entry = await this.exists(`${projectId}/model.h5`);
+          if (modelH5Entry.isFile === true) {
+            this.savePretrained(this.getBaseURL + "/model.h5");
+          }
+          //============= download edgetpu =============//
+          await this.downloadAndSave(
+            `${this.url}/projects/${projectId}/output/Classifier_best_val_accuracy_edgetpu.tflite`,
+            "model_edgetpu.tflite"
+          );
+          let modelEdgeEntry = await this.exists(
+            `${projectId}/model_edgetpu.tflite`
+          );
+          if (modelEdgeEntry.isFile === true) {
+            this.saveEdgeTPU(this.getBaseURL + "/model_edgetpu.tflite");
+          }
+          this.$toast.success(
+            "All model saved to project, save project to download all files"
+          );
+        } catch (err) {
+          console.log("download model failed : ", err);
+          this.$toast.error(err.message);
+        }
+        // window.open(
+        //   `${this.url}/download_model?project_id=${projectId}`,
+        //   "_blank"
+        // );
+      } else if (
+        res &&
+        this.currentDevice == "ROBOT" &&
+        !this.url.startsWith(this.serverUrl)
+      ) {
+        let serverDownloadModel = await axios.post(
+          `${this.serverUrl}/download_server_project`,
+          {
+            project_id: projectId,
+            url: this.url,
+          }
         );
       }
+      this.isDownloading = false;
     },
     connectServer: function (url) {
       console.log("connect server");
@@ -186,9 +239,6 @@ export default {
     },
     handleInference: function () {},
   },
-  directives: {},
-  mounted() {},
-  updated() {},
   computed: {
     ...mapState(["currentDevice", "serverUrl"]),
     ...mapState("server", [
@@ -203,6 +253,24 @@ export default {
     downloadable: function () {
       return this.isDone && !this.isDownloading;
     },
+  },
+  mounted() {
+    if (this.currentDevice == "ROBOT") {
+      this.connectServer(this.serverUrl);
+    }
+  },
+  computed: {
+    ...mapGetters("dataset", ["projectName", "getBaseURL", "getFileExt"]),
+    ...mapState(["currentDevice", "serverUrl"]),
+    ...mapState("server", [
+      "url",
+      "isConnected",
+      "isTraining",
+      "isTerminating",
+      "isTrained",
+      "isConverting",
+      "isConverted",
+    ]),
   },
 };
 </script>
