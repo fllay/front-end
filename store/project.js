@@ -60,12 +60,6 @@ export const mutations = {
   saveModel(state, model) {
     state.project.model = model;
   },
-  saveCode(state, code) {
-    state.project.code = code;
-  },
-  saveWorkspace(state, ws) {
-    state.project.workspace = ws;
-  },
   savePretrained(state, filename) {
     state.project.pretrained = filename;
   },
@@ -80,6 +74,12 @@ export const mutations = {
   },
   saveAnchors(state, anchors) {
     state.project.anchors = anchors;
+  },
+  saveCode(state, code) {
+    state.project.code = code;
+  },
+  saveWorkspace(state, ws) {
+    state.project.workspace = ws;
   },
 };
 export const getters = {

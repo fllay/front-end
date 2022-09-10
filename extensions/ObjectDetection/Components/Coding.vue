@@ -141,11 +141,8 @@ export default {
       console.log("run!!!!");
       //========== load tfjs model ===========//
       this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
-      var code = this.$refs.blockly.getCode();
-      var workspace = this.$refs.blockly.getXml();
-      localStorage.setItem("xml_workspace", workspace);
+      var code = this.project.code;
       const yolo = YOLO;
-      //this.saveWorkspace(workspace);
       var codeAsync = `(async () => {
         this.term.write("Running ...\\r\\n");
         ${code}
@@ -179,10 +176,6 @@ export default {
     this.term.open(this.$refs.terminal);
     this.term.write("$ ");
     fitAddon.fit();
-    //TODO: load xml from project instead of localStorage
-    this.$nextTick(() => {
-      this.$refs.blockly.setWorkspace(localStorage.getItem("xml_workspace"));
-    });
     // this.socket = io(this.tarminalUrl); //.connect();
     // this.socket.on("connect", function () {
     //   this.term.write("\r\n*** Connected to backend ***\r\n");

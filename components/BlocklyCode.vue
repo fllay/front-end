@@ -49,8 +49,6 @@ export default {
     return {
       blockly_workspace: null,
       blockly_xml: null,
-      code: "",
-      xml: "",
     };
   },
   mounted() {
@@ -80,18 +78,14 @@ export default {
       };
       this.blockly_workspace = Blockly.inject(this.$refs["blocklyDiv"], config);
       this.blockly_workspace.addChangeListener(this.workspaceUpdate);
+      this.setWorkspace(this.project.workspace);
     });
   },
   computed: {
-    ...mapMutations("project", ["saveCode", "saveWorkspace"]),
+    ...mapState("project", ["project"]),
   },
   methods: {
-    getCode() {
-      return this.code;
-    },
-    getXml() {
-      return this.xml;
-    },
+    ...mapMutations("project", ["saveCode", "saveWorkspace"]),
     setWorkspace(xml) {
       try {
         let dom = Blockly.Xml.textToDom(xml);
@@ -119,8 +113,8 @@ export default {
         var xml = Blockly.Xml.domToText(
           Blockly.Xml.workspaceToDom(Blockly.mainWorkspace)
         );
-        this.code = sourceCode;
-        this.xml = xml;
+        this.saveCode(sourceCode);
+        this.saveWorkspace(xml);
       }
     },
   },

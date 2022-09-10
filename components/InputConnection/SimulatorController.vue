@@ -57,7 +57,9 @@ export default {
     },
     bbox: {
       type: Array,
-      default: [],
+      default() {
+        return [];
+      },
     },
   },
   data() {
