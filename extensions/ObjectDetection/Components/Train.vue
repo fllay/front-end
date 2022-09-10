@@ -155,7 +155,7 @@ export default {
       }
     },
     downloadModel: async function () {
-      let res = true; // await this.convert_model();
+      let res = await this.convert_model();
       this.isDownloading = true;
       //this.$toast.success("Convert Model Finished!");
       let projectId = this.$store.state.project.project.id;
