@@ -71,7 +71,7 @@
     function MSG_RunProgram(value)
     {
         x = value;
-        return (gameInstance.SendMessage("CameraVK", "ProgramRun", value));
+        return (gameInstance.SendMessage("$[CameraVK]", "ProgramRun", value));
     }
     //function CameraEnable(val)
     //{
@@ -87,11 +87,11 @@
 
     function MSG_LinearDirec(value)
     {
-          return (gameInstance.SendMessage("CameraVK", "KanomchanLinearDirec", value));
+          return (gameInstance.SendMessage("$[CameraVK]", "KanomchanLinearDirec", value));
     }
     function MSG_AngularDirec(value)
     {
-          return (gameInstance.SendMessage("CameraVK", "KanomchanAngularDirec", value));
+          return (gameInstance.SendMessage("$[CameraVK]", "KanomchanAngularDirec", value));
     }
     /////
     //Loop Time
