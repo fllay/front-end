@@ -1,39 +1,37 @@
 <template>
   <div class="display-panel liveview">
-    <div v-if="currentDevice == 'BROWSER'">
-      <div class="config-camera-float-button">
-        <b-avatar v-if="simulator" icon="box" :size="32" button @click="$emit('openSim')"></b-avatar>
-        <b-avatar icon="gear-fill" :size="32" button></b-avatar>
-        <b-avatar
-          v-if="captureDevices.length > 1"
-          icon="arrow-repeat"
-          :size="32"
-          button
-          @click="nextCamera"
-        ></b-avatar>
-      </div>
-      <vue-web-cam
-        v-show="!source.startsWith('http')"
+    <div class="config-camera-float-button">
+      <b-avatar v-if="simulator" icon="box" :size="32" button @click="$emit('openSim')"></b-avatar>
+      <!-- <b-avatar icon="gear-fill" :size="32" button></b-avatar> -->
+      <b-avatar
+        v-if="captureDevices.length > 1"
+        icon="arrow-repeat"
+        :size="32"
+        button
+        @click="nextCamera"
+      ></b-avatar>
+    </div>
+    
+    <vue-web-cam
+        v-show="deviceType == 'WEBCAM'"
         :width="width"
         height="auto"
         ref="webcam"
         @cameras="onCameras"
         @started="onStarted"
         @stopped="onStoped"
-        @camera-change="cameraChanged"
         :deviceId="
           captureDevices.length > 0
             ? captureDevices[currentCaptureDeviceIndex].deviceId
             : null
         "
-      />
-    </div>
-    <div v-else-if="currentDevice == 'ROBOT'">
+    />
+    <div v-if="deviceType == 'STREAM'">
       <b-img
         ref="displayImage"
         crossorigin="anonymous"
         :width="width"
-        :src="streamUrl + '?topic=/output/image_raw&type=ros_compressed'"
+        :src="captureDevices[currentCaptureDeviceIndex]"
       >
       </b-img>
     </div>
@@ -65,16 +63,30 @@ export default {
     };
   },
   created() {
+    // add robot device
     if (this.currentDevice == "ROBOT") {
+      this.captureDevices.push(this.streamUrl + '?topic=/output/image_raw&type=ros_compressed');
       this.$emit("started");
     }
+    // add simulator device
+
   },
   computed: {
     ...mapState(["currentDevice", "initialDevice", "streamUrl"]),
+    deviceType(){
+      let curr = this.captureDevices[this.currentCaptureDeviceIndex];
+      if(curr.length == 64 && !curr.startsWith("http")){
+        return "WEBCAM";
+      }else if(curr.startsWith("http")){
+        return "STREAM";
+      }else if(curr == "SIM"){
+        return "SIM";
+      }
+    }
   },
   methods: {
     onCameras(devices) {
-      this.captureDevices = devices;
+      this.captureDevices = [...this.captureDevices, ...devices.map(el=>el.deviceId)];
       this.currentCaptureDeviceIndex = 0;
       console.log("capture devices : ", devices.length);
     },
@@ -91,13 +103,15 @@ export default {
       }
       console.log(
         "change camera to : ",
-        this.captureDevices[this.currentCaptureDeviceIndex].deviceId
+        this.captureDevices[this.currentCaptureDeviceIndex]
       );
-      this.$refs.webcam.changeCamera(
-        this.captureDevices[this.currentCaptureDeviceIndex].deviceId
-      );
-    },
-    cameraChanged(deviceId) {
+      // webcam 
+      if(this.deviceType == "WEBCAM"){  
+        this.$refs.webcam.changeCamera(
+          this.captureDevices[this.currentCaptureDeviceIndex]
+        );
+      }
+      // reset canvas
       this.ctx = null;
       this.ctx_thumbnail = null;
     },
@@ -121,16 +135,16 @@ export default {
       });
     },
     async captureWithTumbnail(thumbnail_height = 120) {
-      let video =
-        this.currentDevice == "BROWSER"
-          ? this.$refs.webcam.$refs.video
-          : this.$refs.displayImage;
-      let width =
-        this.currentDevice == "BROWSER" ? video.videoWidth : video.clientWidth;
-      let height =
-        this.currentDevice == "BROWSER"
-          ? video.videoHeight
-          : video.clientHeight;
+      let src,width,height;
+      if(this.deviceType == "WEBCAM"){
+        src = this.$refs.webcam.$refs.video;
+        width = src.videoWidth;
+        height = src.videoHeight;
+      }else if(this.deviceType == "STREAM" || this.deviceType == "SIM"){
+        src = this.$refs.displayImage;
+        width = src.clientWidth;
+        height = src.clientHeight;
+      }
       if (!this.ctx) {
         let canvas = document.createElement("canvas");
         canvas.height = height;
@@ -151,9 +165,9 @@ export default {
         this.ctx_thumbnail = canvas.getContext("2d");
       }
       const { ctx, ctx_thumbnail, canvas_thumbnail, canvas } = this;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
       ctx_thumbnail.drawImage(
-        video,
+        src,
         0,
         0,
         canvas_thumbnail.width,

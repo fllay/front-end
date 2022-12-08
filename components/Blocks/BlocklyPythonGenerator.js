@@ -249,16 +249,13 @@ export default (Blockly, that) => {
       "VAR",
       Blockly.Python.ORDER_ATOMIC
     );
-    // TODO: Assemble Python into code variable.
     console.log(block.getFieldValue("DATA_FIELD"));
     var code = value_var + "." + block.getFieldValue("DATA_FIELD");
-    // TODO: Change ORDER_NONE to the correct strength.
     return [code, Blockly.Python.ORDER_NONE];
   };
 
   Blockly.Python["rospy_loop"] = function (block) {
     var statements_name = Blockly.Python.statementToCode(block, "NAME");
-    // TODO: Assemble Python into code variable.
     var branch = Blockly.Python.statementToCode(block, "DO");
     branch = Blockly.Python.addLoopTrap(branch, block) || Blockly.Python.PASS;
     var code = "while not rospy.is_shutdown():\n" + branch;
@@ -268,22 +265,17 @@ export default (Blockly, that) => {
   Blockly.Python["get_objects"] = function (block) {
     var code =
       "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-    // TODO: Change ORDER_NONE to the correct strength.
     return [code, Blockly.Python.ORDER_NONE];
   };
 
   Blockly.Python["get_classes"] = function (block) {
-    // TODO: Assemble Python into code variable.
     var code =
       "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-    // TODO: Change ORDER_NONE to the correct strength.
     return [code, Blockly.Python.ORDER_NONE];
   };
 
   Blockly.Python["get_sound"] = function (block) {
-    // TODO: Assemble Python into code variable.
     var code = "rospy.wait_for_message('/inference', String, timeout=4).data";
-    // TODO: Change ORDER_NONE to the correct strength.
     return [code, Blockly.Python.ORDER_NONE];
   };
 
@@ -293,7 +285,6 @@ export default (Blockly, that) => {
       "NAME",
       Blockly.Python.ORDER_ATOMIC
     );
-    // TODO: Assemble Python into code variable.
     var code = "time.sleep(" + value_name + ")\n";
     return code;
   };

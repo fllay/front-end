@@ -3,28 +3,32 @@ import axios from "axios";
 
 const robotIp =
   location.hostname === "192.168.2.1" ||
-  //location.hostname === "localhost" ||
+  location.hostname === "localhost" ||
   location.hostname.startsWith("192.168.") ||
   location.hostname.startsWith("10.0.");
 
-export const state = () => ({
-  initialDevice: robotIp ? "ROBOT" : "BROWSER",
-  currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
-  serverUrl: "http://192.168.1.101:5000/",
-  streamUrl: "http://192.168.1.101:8080/stream",
-  tarminalUrl: "http://192.168.1.101:8888/",
-  currentWifi: null,
-  isRunning: false,
-  selectedMenu: 0,
-  //------  Image streaming data from Unity
-  imageBytes: null,
-  //----- save project ------//
-  saving: false,
-  savingProgress: 0,
-  //----- open project ------//
-  // opening: false,
-  // openingProgress: 0,
-});
+export const state = () => {
+  let hostname = "192.168.1.135"; //window.location.hostname;
+  return {
+    initialDevice: robotIp ? "ROBOT" : "BROWSER",
+    currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
+    serverUrl: `http://${hostname}:5000`,
+    streamUrl: `http://${hostname}:8080/stream`,
+    terminalUrl: `http://${hostname}:8888`,
+    terminalWebsocket: `ws://${hostname}:8888`,
+    currentWifi: null,
+    isRunning: false,
+    selectedMenu: 0,
+    //------  Image streaming data from Unity
+    imageBytes: null,
+    //----- save project ------//
+    saving: false,
+    savingProgress: 0,
+    //----- open project ------//
+    // opening: false,
+    // openingProgress: 0,
+  };
+};
 //---- modal id ----//
 //new-project-modal
 //open-project-modal

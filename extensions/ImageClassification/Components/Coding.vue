@@ -63,6 +63,8 @@ import SimulatorController from "~/components/InputConnection/SimulatorControlle
 import BlocklyCode from "@/components/BlocklyCode.vue";
 import Toolbox from "../Blocks/toolbox";
 import Blocks from "../Blocks/blocks";
+import RobotBlocks from "../Blocks/blocks_robot";
+import RobotToolbox from "../Blocks/robot_toolbox";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
@@ -76,18 +78,19 @@ export default {
   },
   data() {
     return {
-      toolbox: Toolbox,
-      blocks: Blocks,
+      //toolbox: Toolbox,
+      //blocks: Blocks,
+      socket: null,
       model: null,
       isRunning: false,
       result: "",
     };
   },
   methods: {
-    handleRun() {
+    async handleRun() {
       if (!this.isRunning) {
         this.isRunning = true;
-        this.run();
+        await this.run();
       } else {
         this.isRunning = false;
         this.stop();
@@ -129,35 +132,81 @@ export default {
       console.log(labels);
       return labels;
     },
-    run() {
-      console.log("run!!!!");
-      //========== load tfjs model ===========//
-      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
-      var code = this.project.code;
-      var codeAsync = `(async () => {
-        this.term.write("Running ...\\r\\n");
-        ${code}
-        this.isRunning = false;
-        this.result = "";
-        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
-        this.term.write("\\r\\nFinish\\r\\n");
-      })();`;
-      console.log(codeAsync);
-      try {
-        eval(codeAsync);
-      } catch (error) {
-        console.log(error);
+    async run() {
+      if(this.currentDevice == "BROWSER"){
+        console.log("run!!!!");
+        //========== load tfjs model ===========//
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
+        var code = this.project.code;
+        var codeAsync = `(async () => {
+          this.term.write("Running ...\\r\\n");
+          ${code}
+          this.isRunning = false;
+          this.result = "";
+          this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+          this.term.write("\\r\\nFinish\\r\\n");
+        })();`;
+        console.log(codeAsync);
+        try {
+          eval(codeAsync);
+        } catch (error) {
+          console.log(error);
+        }
+      }else if(this.currentDevice == "ROBOT"){
+        try{
+        let code = this.project.code;
+        let projectId = this.$store.state.project.project.id;
+        const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
+        console.log(res);
+        }catch(err){
+          console.log(err);
+        }
       }
     },
     stop() {
       console.log("stop!!!");
-      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+      if(this.currentDevice == "BROWER"){
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+      }else if(this.currentDevice == "ROBOT"){
+        this.isRunning = false;        
+      }
     },
+    socket_opened(){
+      this.term.write("\r\n*** Connected to backend ***\r\n");
+    },
+    socked_onclose(event){
+      this.term.write(`\r\n*** Disconnected from backend (close cleanly) ***\r\n`);
+      if (event.wasClean) {
+        this.term.write(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}\r\n`);
+      } else {
+        this.term.write('[close] Connection died\r\n');
+      }
+    },
+    socket_error(err){
+      this.term.write(`[error]`);
+    },
+    socket_message(event){
+      this.term.write(event.data);
+    }
   },
   computed: {
     ...mapState("project", ["project"]),
-    ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
+    ...mapState(["currentDevice", "serverUrl", "streamUrl","terminalUrl","terminalWebsocket"]),
     ...mapState("server", ["url"]),
+    blocks(){
+      if(this.currentDevice == "BROWSER"){
+        return Blocks;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotBlocks;
+      }
+    },
+    toolbox(){
+      if(this.currentDevice == "BROWSER"){
+        return Toolbox;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotToolbox;
+      }
+    }
   },
   mounted() {
     console.log("mounted");
@@ -165,10 +214,27 @@ export default {
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
-    this.term.write("$ ");
     fitAddon.fit();
     console.log("model tfjs path : ", this.project.tfjs);
+    if(this.currentDevice == "BROWSER"){
+      this.term.write("$ ");
+    }else if(this.currentDevice == "ROBOT"){
+      try{
+        this.socket = new WebSocket(this.terminalWebsocket);
+        this.term.write("$ ");
+        this.socket.onopen = this.socket_opened.bind(this);
+        this.socket.onmessage = this.socket_message.bind(this);
+        this.socket.onclose = this.socked_onclose.bind(this);
+        this.socket.onerror = this.socket_error.bind(this);
+      }catch(err){
+        this.term.write("ERROR : Cannot connect to server\r\n");
+        this.term.write(err.message+"\r\n");
+      }
+    }
   },
+  beforeUnmount(){
+    this.socket.close();
+  }
 };
 </script>
 

@@ -41,6 +41,7 @@
         </b-col>
       </b-row>
       <p class="p-notice-color small">* เลือกโฟลเดอร์ของโปรเจคที่ต้องการเปิด</p>
+      
     </div>
     <div v-if="step >= 2" class="text-center">
       <vm-progress

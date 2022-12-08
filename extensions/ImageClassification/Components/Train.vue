@@ -158,9 +158,9 @@ export default {
       let res = await this.convert_model();
       this.isDownloading = true;
       //this.$toast.success("Convert Model Finished!");
+      let projectId = this.$store.state.project.project.id;
       if (res && this.currentDevice == "BROWSER") {
         try {
-          let projectId = this.$store.state.project.project.id;
           //============= download label =============//
           await this.downloadAndSave(
             `${this.url}/projects/${projectId}/output/labels.txt`,
@@ -215,6 +215,7 @@ export default {
             url: this.url,
           }
         );
+        console.log(serverDownloadModel);
       }
       this.isDownloading = false;
     },

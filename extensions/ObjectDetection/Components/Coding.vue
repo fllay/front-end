@@ -137,36 +137,60 @@ export default {
       console.log(labels);
       return labels;
     },
-    run() {
+    async run() {
       console.log("run!!!!");
-      //========== load tfjs model ===========//
-      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
-      var code = this.project.code;
-      const yolo = YOLO;
-      var codeAsync = `(async () => {
-        this.term.write("Running ...\\r\\n");
-        ${code}
-        this.isRunning = false;
-        this.result = [];
-        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
-        this.term.write("\\r\\nFinish\\r\\n");
-      })();`;
-      console.log(codeAsync);
-      try {
-        eval(codeAsync);
-      } catch (error) {
-        this.isRunning = false;
-        console.log(error);
+      if(this.currentDevice == "BROWSER"){
+        //========== load tfjs model ===========//
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
+        var code = this.project.code;
+        const yolo = YOLO;
+        var codeAsync = `(async () => {
+          this.term.write("Running ...\\r\\n");
+          ${code}
+          this.isRunning = false;
+          this.result = [];
+          this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+          this.term.write("\\r\\nFinish\\r\\n");
+        })();`;
+        console.log(codeAsync);
+        try {
+          eval(codeAsync);
+        } catch (error) {
+          this.isRunning = false;
+          console.log(error);
+        }
+      }else if(this.currentDevice == "ROBOT"){
+        let code = this.project.code;
+        let projectId = this.$store.state.project.project.id;
+        const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
+      
       }
     },
     stop() {
       console.log("stop!!!");
       this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
     },
+    socket_opened(){
+      this.term.write("\r\n*** Connected to backend ***\r\n");
+    },
+    socked_onclose(event){
+      this.term.write(`\r\n*** Disconnected from backend (close cleanly) ***\r\n`);
+      if (event.wasClean) {
+        this.term.write(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}\r\n`);
+      } else {
+        this.term.write('[close] Connection died\r\n');
+      }
+    },
+    socket_error(err){
+      this.term.write(`[error]`);
+    },
+    socket_message(event){
+      this.term.write(event.data);
+    }
   },
   computed: {
     ...mapState("project", ["project"]),
-    ...mapState(["currentDevice", "serverUrl", "streamUrl"]),
+    ...mapState(["currentDevice", "serverUrl", "streamUrl","terminalUrl","terminalWebsocket"]),
     ...mapState("server", ["url"]),
   },
   mounted() {
@@ -174,21 +198,23 @@ export default {
     const fitAddon = new FitAddon();
     this.term.loadAddon(fitAddon);
     this.term.open(this.$refs.terminal);
-    this.term.write("$ ");
+    //this.term.write("$ ");
     fitAddon.fit();
-    // this.socket = io(this.tarminalUrl); //.connect();
-    // this.socket.on("connect", function () {
-    //   this.term.write("\r\n*** Connected to backend ***\r\n");
-    // });
-    // this.term.onKey(function (ev) {
-    //   this.socket.emit("data", ev.key);
-    // });
-    // this.socket.on("data", function (data) {
-    //   this.term.write(data);
-    // });
-    // this.socket.on("disconnect", function () {
-    //   this.term.write("\r\n*** Disconnected from backend ***\r\n");
-    // });
+    if(this.currentDevice == "BROWSER"){
+      this.term.write("$ ");
+    }else if(this.currentDevice == "ROBOT"){
+      try{
+        this.socket = new WebSocket(this.terminalWebsocket);
+        this.term.write("$ ");
+        this.socket.onopen = this.socket_opened.bind(this);
+        this.socket.onmessage = this.socket_message.bind(this);
+        this.socket.onclose = this.socked_onclose.bind(this);
+        this.socket.onerror = this.socket_error.bind(this);
+      }catch(err){
+        this.term.write("ERROR : Cannot connect to server\r\n");
+        this.term.write(err.message+"\r\n");
+      }
+    }
   },
 };
 </script>
