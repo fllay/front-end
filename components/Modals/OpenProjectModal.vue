@@ -144,6 +144,13 @@ export default {
       );
       return new File([fileContent.data], filename);
     },
+    async getServerProjectFile(filename) {
+      let fileContent = await axios.get(
+        `${this.serverUrl}/projects/${this.projectToOpen}/${filename}`,
+        { responseType: "blob" }
+      );
+      return new File([fileContent.data], filename);
+    },
     async openProjectHandle(e) {
       if (this.currentDevice == "BROWSER") {
         if (this.step == 1) {
@@ -272,6 +279,18 @@ export default {
               await this.addFileToFs({ projectId: projectId, file: file });
             }
           }
+          try{
+            let file = await this.getServerProjectFile(`model.h5`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
+          try{
+            let file = await this.getServerProjectFile(`labels.txt`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
+          try{
+            let file = await this.getServerProjectFile(`model_edgetpu.tflite`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
           this.restoreDataset(projectJson.dataset.dataset);
           this.setProject(projectJson.project.project); //assign new dataset
           this.step = 3;

@@ -8,7 +8,7 @@ const robotIp =
   location.hostname.startsWith("10.0.");
 
 export const state = () => {
-  let hostname = "192.168.1.135"; //window.location.hostname;
+  let hostname = "192.168.1.147"; //window.location.hostname;
   return {
     initialDevice: robotIp ? "ROBOT" : "BROWSER",
     currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
@@ -171,19 +171,31 @@ export const actions = {
       } else if (res.data && res.data.result && res.data.result == "SYNC") {
         //go to sync dataset
         //commit("setSync", true);
-        let needed = res.data.needed;
+        let needed = {
+          dataset: res.data.needed || [],
+          others: res.data.others || [],
+        };
         await dispatch("syncProject", needed);
         commit("setSaving", false);
+        this.$toast.success("บันทึกโปรเจคเสร็จเรียบร้อย");
       }
     }
   },
   async syncProject({ commit, dispatch, state, rootState }, request_file) {
     const formData = new FormData();
-    for (let needed of request_file) {
+    for (let needed of request_file.dataset) {
       let dataset_file = await dispatch("dataset/getDataAsFile", needed, {
         root: true,
       });
       formData.append("dataset", dataset_file);
+    }
+    for (let other of request_file.others) {
+      try {
+        let file = await dispatch("dataset/getDataAsFile", other, {
+          root: true,
+        });
+        formData.append("other", file);
+      } catch (err) {}
     }
     let project_id = rootState.project.project.id;
     formData.append("project_id", project_id);
@@ -196,7 +208,7 @@ export const actions = {
         "Content-Type": "multipart/form-data",
       },
       onUploadProgress: (pg) =>
-        commit("setSavingProgress", (pg.loaded / pg.total) * 100),
+        commit("setSavingProgress", (pg.loaded / pg.total) * 100 - 1),
     });
     if (res.data && res.data.result && res.data.result == "OK") {
       return true;

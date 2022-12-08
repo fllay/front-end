@@ -75,7 +75,9 @@ export default {
     ...mapState(["currentDevice", "initialDevice", "streamUrl"]),
     deviceType(){
       let curr = this.captureDevices[this.currentCaptureDeviceIndex];
-      if(curr.length == 64 && !curr.startsWith("http")){
+      if(!curr){
+        return "WEBCAM"
+      }else if(curr.length == 64 && !curr.startsWith("http")){
         return "WEBCAM";
       }else if(curr.startsWith("http")){
         return "STREAM";

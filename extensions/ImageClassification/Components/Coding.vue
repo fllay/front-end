@@ -154,10 +154,10 @@ export default {
         }
       }else if(this.currentDevice == "ROBOT"){
         try{
-        let code = this.project.code;
-        let projectId = this.$store.state.project.project.id;
-        const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
-        console.log(res);
+          let code = this.project.code;
+          let projectId = this.$store.state.project.project.id;
+          const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
+          console.log(res);
         }catch(err){
           console.log(err);
         }
@@ -165,10 +165,18 @@ export default {
     },
     stop() {
       console.log("stop!!!");
-      if(this.currentDevice == "BROWER"){
+      if(this.currentDevice == "BROWSER"){
+        //========== load tfjs model ===========//
         this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
       }else if(this.currentDevice == "ROBOT"){
-        this.isRunning = false;        
+        try{
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            //this.socket.send(43);
+            this.socket.emit('data', 3);
+          }
+        }catch(err){
+          console.log(err);
+        }
       }
     },
     socket_opened(){
@@ -187,6 +195,9 @@ export default {
     },
     socket_message(event){
       this.term.write(event.data);
+    },
+    term_onkey(event){
+      console.log(event);
     }
   },
   computed: {
@@ -226,6 +237,20 @@ export default {
         this.socket.onmessage = this.socket_message.bind(this);
         this.socket.onclose = this.socked_onclose.bind(this);
         this.socket.onerror = this.socket_error.bind(this);
+        // this.term.onKey(this.term_onkey.bind(this));
+        //this.term.onKey((k,v)=> {console.log(k,v);});
+        this.term.onData((k,v)=> {console.log(k,v);});
+        this.term.onKey(key => {
+          const char = key;
+          console.log(key);
+          console.log(char.key === "");
+          if (char === "") {
+            console.log("Enter pressed");
+            prompt();
+          } else {
+            term.write(char);
+          }
+        });
       }catch(err){
         this.term.write("ERROR : Cannot connect to server\r\n");
         this.term.write(err.message+"\r\n");

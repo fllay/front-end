@@ -5,7 +5,7 @@
         <div class="d-flex flex-fill flex-row" style="background-color: white">
           <blockly-code
             ref="blockly"
-            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '100%' }"
+            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '60%'}"
             :toolbox="toolbox"
             :blocks="blocks"
             :language="currentDevice == 'BROWSER' ? 'javascript' : 'python'"
@@ -18,6 +18,10 @@
             :captureKey="false"
             :bbox="result"
           ></simulator-controller>
+          <div v-else-if="currentDevice == 'ROBOT'" style="width: 40%; display: flex; align-items: center;">
+            <img style="width:100%" :src="`${streamUrl}?topic=/output/image_${isRunning?'detected':'raw'}&type=ros_compressed`">
+          </div>
+          
         </div>
         <div style="height: 200px; display: flex">
           <div
@@ -45,15 +49,8 @@
                   <img
                     v-if="!isRunning"
                     src="~/assets/images/UI/svg/Group 80.svg"
-                    alt=""
-                    srcset=""
                   />
-                  <img
-                    v-else
-                    src="~/assets/images/UI/svg/Group 82.svg"
-                    alt=""
-                    srcset=""
-                  />
+                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" />
                 </span>
               </button>
             </div>
@@ -70,6 +67,8 @@ import SimulatorController from "~/components/InputConnection/SimulatorControlle
 import BlocklyCode from "@/components/BlocklyCode.vue";
 import Toolbox from "../Blocks/toolbox";
 import Blocks from "../Blocks/blocks";
+import RobotBlocks from "../Blocks/blocks_robot";
+import RobotToolbox from "../Blocks/robot_toolbox";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
@@ -84,8 +83,9 @@ export default {
   },
   data() {
     return {
-      toolbox: Toolbox,
-      blocks: Blocks,
+      // toolbox: Toolbox,
+      // blocks: Blocks,
+      socket: null,
       model: null,
       isRunning: false,
       result: [],
@@ -160,15 +160,31 @@ export default {
           console.log(error);
         }
       }else if(this.currentDevice == "ROBOT"){
-        let code = this.project.code;
-        let projectId = this.$store.state.project.project.id;
-        const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
-      
+        try{
+          let code = this.project.code;
+          let projectId = this.$store.state.project.project.id;
+          const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
+        }catch(err){
+          console.log(err);
+        }
       }
     },
     stop() {
       console.log("stop!!!");
-      this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+      if(this.currentDevice == "BROWSER"){
+        //========== load tfjs model ===========//
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+      }else if(this.currentDevice == "ROBOT"){
+        try{
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            //this.socket.send(43);
+            this.socket.send("CMD:TERM");
+          }
+        }catch(err){
+          console.log(err);
+        }
+      }
+      
     },
     socket_opened(){
       this.term.write("\r\n*** Connected to backend ***\r\n");
@@ -192,6 +208,20 @@ export default {
     ...mapState("project", ["project"]),
     ...mapState(["currentDevice", "serverUrl", "streamUrl","terminalUrl","terminalWebsocket"]),
     ...mapState("server", ["url"]),
+    blocks(){
+      if(this.currentDevice == "BROWSER"){
+        return Blocks;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotBlocks;
+      }
+    },
+    toolbox(){
+      if(this.currentDevice == "BROWSER"){
+        return Toolbox;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotToolbox;
+      }
+    }
   },
   mounted() {
     this.term = new Terminal({ cursorBlink: true });

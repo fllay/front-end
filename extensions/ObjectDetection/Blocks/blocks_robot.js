@@ -139,14 +139,8 @@ export default (Blockly, that) => {
   //   };
   Blockly.Python["start_object_detector"] = function (block) {
     var cc =
-      "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_feature' in ros_nodes:\n";
-    cc =
-      cc +
-      "\tcommand='rosrun kidbright_tpu tpu_detect.py " +
-      process.env.VUE_APP_ROOT +
-      "/" +
-      that.$store.getters.getProjectDir +
-      "'\n";
+      "import rosnode\nimport subprocess\nimport time\nimport os\ncur_dir_path = os.path.dirname(os.path.realpath(__file__))\nros_nodes = rosnode.get_node_names()\nif not '/image_feature' in ros_nodes:\n";
+    cc = cc + "\tcommand='rosrun kidbright_tpu tpu_detect.py '+cur_dir_path\n";
     cc =
       cc +
       "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
@@ -162,14 +156,9 @@ export default (Blockly, that) => {
     //var text = code1.join("\n");
     //console.log(this.$store.getters.getProjectDir )
     var cc =
-      "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_class' in ros_nodes:\n";
+      "import rosnode\nimport subprocess\nimport time\nimport os\ncur_dir_path = os.path.dirname(os.path.realpath(__file__))\nros_nodes = rosnode.get_node_names()\nif not '/image_class' in ros_nodes:\n";
     cc =
-      cc +
-      "\tcommand='rosrun kidbright_tpu tpu_classify.py " +
-      process.env.VUE_APP_ROOT +
-      "/" +
-      that.$store.getters.getProjectDir +
-      "'\n";
+      cc + "\tcommand='rosrun kidbright_tpu tpu_classify.py' + cur_dir_path\n";
     cc =
       cc +
       "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
@@ -182,7 +171,7 @@ export default (Blockly, that) => {
     //console.log("==========> Duraion is =======>");
     var nf = dur.Duration * 4;
     var cc =
-      "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/wake_class_wait' in ros_nodes:\n";
+      "import rosnode\nimport subprocess\nimport time\nimport os\ncur_dir_path = os.path.dirname(os.path.realpath(__file__))\nros_nodes = rosnode.get_node_names()\nif not '/wake_class_wait' in ros_nodes:\n";
     cc =
       cc +
       "\tcommand='rosrun kidbright_tpu wakeword_classify.py " +
