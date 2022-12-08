@@ -217,6 +217,7 @@ export default {
           {
             project_id: projectId,
             url: this.url,
+            model_file: "YOLO_best_mAP"
           }
         );
       }

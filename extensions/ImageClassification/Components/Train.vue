@@ -213,6 +213,7 @@ export default {
           {
             project_id: projectId,
             url: this.url,
+            model_file: "Classifier_best_val_accuracy"
           }
         );
         console.log(serverDownloadModel);
