@@ -2,13 +2,14 @@ import JSZip from "jszip";
 import axios from "axios";
 
 const robotIp =
+  location.hostname === "raspberrypi.local" ||
   location.hostname === "192.168.2.1" ||
   location.hostname === "localhost" ||
   location.hostname.startsWith("192.168.") ||
   location.hostname.startsWith("10.0.");
 
 export const state = () => {
-  let hostname = "192.168.1.147"; //window.location.hostname;
+  let hostname = "192.168.1.148"; //window.location.hostname;
   return {
     initialDevice: robotIp ? "ROBOT" : "BROWSER",
     currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
@@ -122,6 +123,7 @@ export const actions = {
       commit("setSavingProgress", 96);
       //---------- model h5 ----------//
       if (rootState.project.project.pretrained) {
+        console.log("save model.h5");
         let modelH5File = await dispatch("dataset/getDataAsFile", "model.h5");
         zip.file("model.h5", modelH5File);
       }

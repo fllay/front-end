@@ -113,6 +113,7 @@ export default {
         var xml = Blockly.Xml.domToText(
           Blockly.Xml.workspaceToDom(Blockly.mainWorkspace)
         );
+        console.log(sourceCode);
         this.saveCode(sourceCode);
         this.saveWorkspace(xml);
       }

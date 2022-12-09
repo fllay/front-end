@@ -275,7 +275,6 @@ export default {
               await this.addFileToFs({ projectId: projectId, file: fileSound });
             } else {
               let file = await this.getServerFile(`${data.id}.${data.ext}`);
-              console.log(file);
               await this.addFileToFs({ projectId: projectId, file: file });
             }
           }

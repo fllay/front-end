@@ -240,6 +240,12 @@ export default {
         this.socket.onmessage = this.socket_message.bind(this);
         this.socket.onclose = this.socked_onclose.bind(this);
         this.socket.onerror = this.socket_error.bind(this);
+        this.term.onKey(key => {
+          const char = key.key;
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            this.socket.send(char);
+          }
+        });
       }catch(err){
         this.term.write("ERROR : Cannot connect to server\r\n");
         this.term.write(err.message+"\r\n");

@@ -5,7 +5,7 @@
         <div class="d-flex flex-fill flex-row" style="background-color: white">
           <blockly-code
             ref="blockly"
-            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '100%' }"
+            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '60%' }"
             :toolbox="toolbox"
             :blocks="blocks"
             :language="currentDevice == 'BROWSER' ? 'javascript' : 'python'"
@@ -18,6 +18,10 @@
             :captureKey="false"
             :classify="result"
           ></simulator-controller>
+          <div v-else-if="currentDevice == 'ROBOT'" style="width: 40%; display: flex; align-items: center;">
+            <img v-if="isRunning" style="width:100%" :src="`${streamUrl}?topic=/output/image_detected&type=ros_compressed`">
+            <img v-else style="width:100%" :src="`${streamUrl}?topic=/output/image_raw&type=ros_compressed`">
+          </div>
         </div>
         <div style="height: 200px; display: flex">
           <div
@@ -172,7 +176,7 @@ export default {
         try{
           if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
             //this.socket.send(43);
-            this.socket.emit('data', 3);
+            this.socket.send("CMD:TERM");
           }
         }catch(err){
           console.log(err);
@@ -237,18 +241,10 @@ export default {
         this.socket.onmessage = this.socket_message.bind(this);
         this.socket.onclose = this.socked_onclose.bind(this);
         this.socket.onerror = this.socket_error.bind(this);
-        // this.term.onKey(this.term_onkey.bind(this));
-        //this.term.onKey((k,v)=> {console.log(k,v);});
-        this.term.onData((k,v)=> {console.log(k,v);});
         this.term.onKey(key => {
-          const char = key;
-          console.log(key);
-          console.log(char.key === "");
-          if (char === "") {
-            console.log("Enter pressed");
-            prompt();
-          } else {
-            term.write(char);
+          const char = key.key;
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            this.socket.send(char);
           }
         });
       }catch(err){

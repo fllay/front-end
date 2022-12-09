@@ -154,6 +154,46 @@ export default {
         this.saveTfjs(this.getBaseURL + "/model.json");
       }
     },
+    syncModelFile: async function(projectId){
+      //============= download label =============//
+      await this.downloadAndSave(
+        `${this.url}/projects/${projectId}/output/labels.txt`,
+        "labels.txt"
+      );
+      let labelFileEntry = await this.exists(`${projectId}/labels.txt`);
+      if (labelFileEntry.isFile === true) {
+        this.saveLabelFile(this.getBaseURL + "/labels.txt");
+      }
+      //============= download anchors ===========//
+      let anchorsText = await axios.get(
+        `${this.url}/projects/${projectId}/output/anchors.txt`
+      );
+      let anchors = anchorsText.data.split(",").map((el) => parseFloat(el));
+      console.log("anchors : ", anchors);
+      this.saveAnchors(anchors);
+      //============= download tfjs ==============//
+      await this.downloadTfjs(projectId);
+      //============= download h5 model ============//
+      await this.downloadAndSave(
+        `${this.url}/projects/${projectId}/output/YOLO_best_mAP.h5`,
+        "model.h5"
+      );
+      let modelH5Entry = await this.exists(`${projectId}/model.h5`);
+      if (modelH5Entry.isFile === true) {
+        this.savePretrained(this.getBaseURL + "/model.h5");
+      }
+      //============= download edgetpu =============//
+      await this.downloadAndSave(
+        `${this.url}/projects/${projectId}/output/YOLO_best_mAP_edgetpu.tflite`,
+        "model_edgetpu.tflite"
+      );
+      let modelEdgeEntry = await this.exists(
+        `${projectId}/model_edgetpu.tflite`
+      );
+      if (modelEdgeEntry.isFile === true) {
+        this.saveEdgeTPU(this.getBaseURL + "/model_edgetpu.tflite");
+      }
+    },
     downloadModel: async function () {
       let res = await this.convert_model();
       this.isDownloading = true;
@@ -161,44 +201,7 @@ export default {
       let projectId = this.$store.state.project.project.id;
       if (res && this.currentDevice == "BROWSER") {
         try {
-          //============= download label =============//
-          await this.downloadAndSave(
-            `${this.url}/projects/${projectId}/output/labels.txt`,
-            "labels.txt"
-          );
-          let labelFileEntry = await this.exists(`${projectId}/labels.txt`);
-          if (labelFileEntry.isFile === true) {
-            this.saveLabelFile(this.getBaseURL + "/labels.txt");
-          }
-          //============= download anchors ===========//
-          let anchorsText = await axios.get(
-            `${this.url}/projects/${projectId}/output/anchors.txt`
-          );
-          let anchors = anchorsText.data.split(",").map((el) => parseFloat(el));
-          console.log("anchors : ", anchors);
-          this.saveAnchors(anchors);
-          //============= download tfjs ==============//
-          await this.downloadTfjs(projectId);
-          //============= download h5 model ============//
-          await this.downloadAndSave(
-            `${this.url}/projects/${projectId}/output/YOLO_best_mAP.h5`,
-            "model.h5"
-          );
-          let modelH5Entry = await this.exists(`${projectId}/model.h5`);
-          if (modelH5Entry.isFile === true) {
-            this.savePretrained(this.getBaseURL + "/model.h5");
-          }
-          //============= download edgetpu =============//
-          await this.downloadAndSave(
-            `${this.url}/projects/${projectId}/output/YOLO_best_mAP_edgetpu.tflite`,
-            "model_edgetpu.tflite"
-          );
-          let modelEdgeEntry = await this.exists(
-            `${projectId}/model_edgetpu.tflite`
-          );
-          if (modelEdgeEntry.isFile === true) {
-            this.saveEdgeTPU(this.getBaseURL + "/model_edgetpu.tflite");
-          }
+          await this.syncModelFile(projectId);
           this.$toast.success(
             "All model saved to project, save project to download all files"
           );
@@ -211,6 +214,8 @@ export default {
         this.currentDevice == "ROBOT" &&
         !this.url.startsWith(this.serverUrl)
       ) {
+        console.log("sync project to local file system");
+        await this.syncModelFile(projectId);
         console.log("download model for robot");
         let serverDownloadModel = await axios.post(
           `${this.serverUrl}/download_server_project`,
@@ -220,6 +225,9 @@ export default {
             model_file: "YOLO_best_mAP"
           }
         );
+        if(serverDownloadModel && serverDownloadModel.data && serverDownloadModel.data.result === "OK"){
+          this.$toast.success("ดาวน์โหลดข้อมูลสำเร็จ");
+        }
       }
       this.isDownloading = false;
     },
@@ -238,6 +246,9 @@ export default {
       if (this.isTraining) {
         await this.$store.dispatch("server/terminate");
       } else {
+        if(this.currentDevice == "ROBOT"){
+          await this.$store.dispatch("saveProject");
+        }
         await this.$store.dispatch("server/train");
       }
     },
