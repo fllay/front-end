@@ -82,8 +82,6 @@ export default {
   },
   data() {
     return {
-      //toolbox: Toolbox,
-      //blocks: Blocks,
       socket: null,
       model: null,
       isRunning: false,

@@ -2,790 +2,258 @@
   <div class="blockly-module">
     <div class="d-flex w-100 h-100 outer-wrap">
       <div class="d-flex flex-fill flex-column main-panel">
-        <div
-          class="d-flex flex-fill flex-column"
-          style="background-color: white"
-        >
-          <div class="blockly" ref="blocklyDiv"></div>
-        </div>
-        <div style="height: 200px">
-          <div
-            class="bg-secondary text-light px-3 py-2 scroll-box"
-            ref="logsBox"
-          >
-            <br />
-            <div v-html="result" />
-            <div v-html="logs" />
+        <div class="d-flex flex-fill flex-row" style="background-color: white">
+          <blockly-code
+            ref="blockly"
+            :style="{ width: currentDevice == 'BROWSER' ? '50%' : '60%' }"
+            :toolbox="toolbox"
+            :blocks="blocks"
+            :language="currentDevice == 'BROWSER' ? 'javascript' : 'python'"
+          ></blockly-code>
+          <simulator-controller
+            v-if="currentDevice == 'BROWSER'"
+            style="width: 50%"
+            ref="simulator"
+            :showController="false"
+            :captureKey="false"
+            :classify="result"
+          ></simulator-controller>
+          <div v-else-if="currentDevice == 'ROBOT'" style="width: 40%; display: flex; align-items: center;">
+            <img v-if="isRunning" style="width:100%" :src="`${streamUrl}?topic=/output/image_detected&type=ros_compressed`">
+            <img v-else style="width:100%" :src="`${streamUrl}?topic=/output/image_raw&type=ros_compressed`">
           </div>
         </div>
-      </div>
-
-      <div class="side-panel">
-        <div>
-          <div class="display-panel" v-show="!isExpanded && isRunning">
-            <p class="display-image">
-              <b-img ref="displayImage" src=""> </b-img>
-            </p>
-            <div class="control">
-              <b-form-checkbox
-                class="check"
-                v-model="nDisplay"
-                name="check-button"
-                switch
-              >
-                Detector
-              </b-form-checkbox>
-              <img
-                src="~/assets/images/UI/svg/expad-arrows.svg"
-                height="20"
-                v-b-modal.expanded-camera
-              />
+        <div style="height: 200px; display: flex">
+          <div
+            style="
+              width: 100%;
+              height: 100%;
+              padding: 5px;
+              background-color: black;
+            "
+            id="terminal"
+            ref="terminal"
+          ></div>
+          <div
+            style="
+              width: 200px;
+              height: 100%;
+              text-align: center;
+              padding-top: 46px;
+              background-color: black;
+            "
+          >
+            <div class="button">
+              <button pill v-on:click="handleRun" class="btn-run op-btn">
+                <span class="ico">
+                  <img
+                    v-if="!isRunning"
+                    src="~/assets/images/UI/svg/Group 80.svg"
+                  />
+                  <img v-else src="~/assets/images/UI/svg/Group 82.svg" />
+                </span>
+              </button>
             </div>
           </div>
         </div>
-        <div class="buttom">
-          <button
-            v-if="!isRunning"
-            :disabled="isProjectLoaded"
-            pill
-            v-on:click="$emit('run')"
-            class="btn-run op-btn"
-          >
-            <span class="ico"
-              ><img src="~/assets/images/UI/svg/Group 80.svg" alt="" srcset=""
-            /></span>
-          </button>
-
-          <!-- <button
-            v-if="!isRunning"
-            :disabled="isProjectLoaded"
-            pill
-            v-on:click="$emit('save-workspace')"
-            class="btn-run"
-            style="margin-left:10px;">
-            <span class="ico">
-              <img src="../assets/UI/svg/save.svg" alt="" srcset=""/>
-            </span>
-          </button> -->
-
-          <button
-            v-if="isRunning"
-            :disabled="!isProjectLoaded"
-            pill
-            v-on:click="$emit('stop-run')"
-            class="btn-stop"
-          >
-            <span class="ico"
-              ><img src="~/assets/images/UI/svg/Group 82.svg" alt="" srcset=""
-            /></span>
-          </button>
-        </div>
       </div>
-      <b-modal
-        id="expanded-camera"
-        size="xl"
-        title="Live view"
-        modal-class="my-modal-class my-modal-class-no-pad"
-        :centered="true"
-        :hide-footer="true"
-        :hide-header-close="true"
-        @shown="setExpanded(true)"
-        @hide="setExpanded(false)"
-        :no-close-on-backdrop="true"
-        :no-close-on-esc="true"
-      >
-        <div class="display-image">
-          <b-img class="realtime-image" ref="displayImageFull" src=""> </b-img>
-          <div class="control">
-            <b-form-checkbox
-              class="check"
-              v-model="nDisplay"
-              name="check-button"
-              switch
-            >
-              Detector
-            </b-form-checkbox>
-            <img
-              src="~/assets/images/UI/svg/minimize-arrows.svg"
-              height="20"
-              @click="$bvModal.hide('expanded-camera')"
-            />
-          </div>
-        </div>
-      </b-modal>
     </div>
   </div>
 </template>
 
 <script>
-/**
- * @license
- *
- * Copyright 2019 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
- * @fileoverview Blockly Vue Component.
- * @author samelh@google.com (Sam El-Husseini)
- */
-
-import Blockly from "blockly";
-import blocklyPython from "blockly/python";
+import { mapState, mapActions, mapMutations, mapGetters } from "vuex";
+import SimulatorController from "~/components/InputConnection/SimulatorController.vue";
+import BlocklyCode from "@/components/BlocklyCode.vue";
+import Toolbox from "../Blocks/toolbox";
+import Blocks from "../Blocks/blocks";
+import RobotBlocks from "../Blocks/blocks_robot";
+import RobotToolbox from "../Blocks/robot_toolbox";
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
+import "xterm/css/xterm.css";
+import axios from "axios";
 
 export default {
   name: "BlocklyComponent",
-  props: {
-    /*isRunHiden: Boolean,*/
-    isProjectLoaded: Boolean,
-    isRunning: Boolean,
+  components: {
+    BlocklyCode,
+    SimulatorController,
   },
   data() {
     return {
-      blockly_woakspace: null,
-      blockly_xml: "",
-      nDisplay: false,
-      ipAddress: "192.168.88.247",
+      socket: null,
+      model: null,
+      isRunning: false,
       result: "",
-      logs: "",
-      s_result: "",
-      isExpanded: false,
     };
   },
   methods: {
-    setExpanded: function (value) {
-      if (value) {
-        this.$refs.displayImageFull.src = this.$refs.displayImage.src;
+    async handleRun() {
+      if (!this.isRunning) {
+        this.isRunning = true;
+        await this.run();
       } else {
-        this.$refs.displayImage.src = this.$refs.displayImageFull.src;
+        this.isRunning = false;
+        this.stop();
       }
-      this.isExpanded = value;
     },
+    async initModel() {
+      var modelJson = await axios.get(this.project.tfjs);
+      var weights = [];
+      let baseModelPath = this.project.tfjs.substring(
+        0,
+        this.project.tfjs.lastIndexOf("/")
+      );
+      let downloadPromises = [];
+      for (let binFile of modelJson.data.weightsManifest[0].paths) {
+        let w = axios.get(baseModelPath + "/" + binFile, {
+          responseType: "arraybuffer",
+        });
+        downloadPromises.push(w);
+      }
+      let downloadedWeight = await Promise.all(downloadPromises);
+      weights = downloadedWeight.map((el) => el.data);
+      let weightData = this.$helper.concatenateArrayBuffers(weights);
+      this.model = await tf.loadLayersModel(
+        tf.io.fromMemory(
+          modelJson.data.modelTopology,
+          modelJson.data.weightsManifest[0].weights,
+          weightData
+        )
+      );
+    },
+    async getLabels() {
+      const __label_res = await axios.get(this.project.labelFile);
+      const __labels_text = __label_res.data;
+      let labels = __labels_text
+        .replaceAll("\r", "")
+        .split("\n")
+        .map((el) => el.trim())
+        .filter((el) => el);
+      console.log(labels);
+      return labels;
+    },
+    async run() {
+      if(this.currentDevice == "BROWSER"){
+        console.log("run!!!!");
+        //========== load tfjs model ===========//
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
+        var code = this.project.code;
+        var codeAsync = `(async () => {
+          this.term.write("Running ...\\r\\n");
+          ${code}
+          this.isRunning = false;
+          this.result = "";
+          this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+          this.term.write("\\r\\nFinish\\r\\n");
+        })();`;
+        console.log(codeAsync);
+        try {
+          eval(codeAsync);
+        } catch (error) {
+          console.log(error);
+        }
+      }else if(this.currentDevice == "ROBOT"){
+        try{
+          let code = this.project.code;
+          let projectId = this.$store.state.project.project.id;
+          const res = await axios.post(this.terminalUrl + "/run", {project_id : projectId, code : btoa(code)});
+          console.log(res);
+        }catch(err){
+          console.log(err);
+        }
+      }
+    },
+    stop() {
+      console.log("stop!!!");
+      if(this.currentDevice == "BROWSER"){
+        //========== load tfjs model ===========//
+        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+      }else if(this.currentDevice == "ROBOT"){
+        try{
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            //this.socket.send(43);
+            this.socket.send("CMD:TERM");
+          }
+        }catch(err){
+          console.log(err);
+        }
+      }
+    },
+    socket_opened(){
+      this.term.write("\r\n*** Connected to backend ***\r\n");
+    },
+    socked_onclose(event){
+      this.term.write(`\r\n*** Disconnected from backend (close cleanly) ***\r\n`);
+      if (event.wasClean) {
+        this.term.write(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}\r\n`);
+      } else {
+        this.term.write('[close] Connection died\r\n');
+      }
+    },
+    socket_error(err){
+      this.term.write(`[error]`);
+    },
+    socket_message(event){
+      this.term.write(event.data);
+    },
+    term_onkey(event){
+      console.log(event);
+    }
   },
   computed: {
-    updateXML: function () {
-      console.log("Update XML to workspace");
-      this.blockly_woakspace.clear();
-      let textToDom = Blockly.Xml.textToDom(this.blockly_xml);
-      Blockly.Xml.domToWorkspace(this.blockly_woakspace, textToDom);
-    },
-    updateOutput: function () {
-      console.log("NDisplay =");
-      console.log(this.nDisplay);
-    },
-  },
-  watch: {
-    nDisplay: {
-      deep: true,
-      handler: function (newValue) {
-        console.log("Selected users changed", newValue);
-        if (newValue == false) {
-          this.url =
-            "http://" +
-            this.ipAddress +
-            ":8080/stream?topic=/output/image_raw&type=ros_compressed";
-          this.$refs.displayImage.src = this.url;
-          this.$refs.displayImageFull.src = this.url;
-        } else if (newValue == true) {
-          this.url =
-            "http://" +
-            this.ipAddress +
-            ":8080/stream?topic=/output/image_detected&type=ros_compressed";
-
-          this.$refs.displayImage.src = this.url;
-          this.$refs.displayImageFull.src = this.url;
-        }
-      },
-    },
-    s_result: function (val) {
-      console.log("watch = ");
-      this.result += val;
-      //console.log(val.toString(16))
-      var ss = val.replace(/(<([^>]+)>)/gi, "");
-
-      //const ss = strippedString.replace(/[\n\r\t]/g,);
-      var base = 16;
-
-      /*console.log(ss.split('').map(function (c) {
-                return c.charCodeAt(0);
-            }))
-            console.log(ss)*/
-      if (ss.replace(/(\r\n|\n|\r)/gm, "") === "DONE") {
-        console.log("Finished");
+    ...mapState("project", ["project"]),
+    ...mapState(["currentDevice", "serverUrl", "streamUrl","terminalUrl","terminalWebsocket"]),
+    ...mapState("server", ["url"]),
+    blocks(){
+      if(this.currentDevice == "BROWSER"){
+        return Blocks;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotBlocks;
       }
     },
+    toolbox(){
+      if(this.currentDevice == "BROWSER"){
+        return Toolbox;
+      }else if(this.currentDevice == "ROBOT"){
+        return RobotToolbox;
+      }
+    }
   },
-
   mounted() {
-    const base_blocks = `<xml ref="toolbox" style="display: none">
-      <category name="Logic" colour="%{BKY_LOGIC_HUE}">
-      <category name="If">
-        <block type="controls_if"></block>
-        <block type="controls_if">
-          <mutation else="1"></mutation>
-        </block>
-        <block type="controls_if">
-          <mutation elseif="1" else="1"></mutation>
-        </block>
-      </category>
-      <category name="Boolean" colour="%{BKY_LOGIC_HUE}">
-        <block type="logic_compare"></block>
-        <block type="logic_operation"></block>
-        <block type="logic_negate"></block>
-        <block type="logic_boolean"></block>
-        <block type="logic_null"></block>
-        <block type="logic_ternary"></block>
-      </category>
-    </category>
-    <category name="Loops" colour="%{BKY_LOOPS_HUE}">
-      <block type="controls_repeat_ext">
-        <value name="TIMES">
-          <block type="math_number">
-            <field name="NUM">10</field>
-          </block>
-        </value>
-      </block>
-      <block type="controls_whileUntil"></block>
-      <block type="controls_for">
-        <field name="VAR">i</field>
-        <value name="FROM">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="TO">
-          <block type="math_number">
-            <field name="NUM">10</field>
-          </block>
-        </value>
-        <value name="BY">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-      </block>
-      <block type="controls_forEach"></block>
-      <block type="controls_flow_statements"></block>
-    </category>
-    <category name="Math" colour="%{BKY_MATH_HUE}">
-      <block type="math_number">
-        <field name="NUM">123</field>
-      </block>
-      <block type="math_arithmetic"></block>
-      <block type="math_single"></block>
-      <block type="math_trig"></block>
-      <block type="math_constant"></block>
-      <block type="math_number_property"></block>
-      <block type="math_round"></block>
-      <block type="math_on_list"></block>
-      <block type="math_modulo"></block>
-      <block type="math_constrain">
-        <value name="LOW">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="HIGH">
-          <block type="math_number">
-            <field name="NUM">100</field>
-          </block>
-        </value>
-      </block>
-      <block type="math_random_int">
-        <value name="FROM">
-          <block type="math_number">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="TO">
-          <block type="math_number">
-            <field name="NUM">100</field>
-          </block>
-        </value>
-      </block>
-      <block type="math_random_float"></block>
-      <block type="math_atan2"></block>
-    </category>
-    <category name="Text" colour="%{BKY_TEXTS_HUE}">
-    <block type="text"></block>
-    <block type="text_length"></block>
-    <block type="text_print"></block>
-</category>
-    <category name="Lists" colour="%{BKY_LISTS_HUE}">
-      <block type="lists_create_empty"></block>
-      <block type="lists_create_with"></block>
-      <block type="lists_repeat">
-        <value name="NUM">
-          <block type="math_number">
-            <field name="NUM">5</field>
-          </block>
-        </value>
-      </block>
-      <block type="lists_length"></block>
-      <block type="lists_isEmpty"></block>
-      <block type="lists_indexOf"></block>
-      <block type="lists_getIndex"></block>
-      <block type="lists_setIndex"></block>
-    </category>
-    <sep></sep>
-    <category name="Variables" custom="VARIABLE" colour="%{BKY_VARIABLES_HUE}">
-    </category>
-    <category name="Functions" custom="PROCEDURE" colour="%{BKY_PROCEDURES_HUE}">
-    </category>
-    <sep></sep>
-      
-      <category name="KidBright AI" colour="%{BKY_VARIABLES_HUE}">
-      <block type="init_ros_node"></block>
-      <block type="start_object_detector"></block>
-      <block type="start_image_classification"></block>
-      <block type="start_wake_word_detector"></block>
-      <block type="rospy_loop"></block>
-      <block type="get_objects"></block>
-      <block type="get_classes"></block>
-      <block type="get_sound"></block>
-
-      <block type="get_object_attr"></block>
-      <block type="set_velocity"></block>
-      <block type="delay"></block>
-  </category>
-
-  </xml>`;
-
-    // this.code = blocklyPython.workspaceToCode(this.blockly_woakspace);
-
-    Blockly.readPythonFile = function (file) {
-      var rawFile = new XMLHttpRequest();
-      var code = "";
-      rawFile.open("GET", file, false);
-      rawFile.onreadystatechange = function () {
-        var rr = JSON.parse(rawFile.responseText);
-        if (rawFile.readyState === 4) {
-          if (rawFile.status === 200 || rawFile.status == 0) {
-            code = rr.data;
+    console.log("mounted");
+    this.term = new Terminal({ cursorBlink: true });
+    const fitAddon = new FitAddon();
+    this.term.loadAddon(fitAddon);
+    this.term.open(this.$refs.terminal);
+    fitAddon.fit();
+    console.log("model tfjs path : ", this.project.tfjs);
+    if(this.currentDevice == "BROWSER"){
+      this.term.write("$ ");
+    }else if(this.currentDevice == "ROBOT"){
+      try{
+        this.socket = new WebSocket(this.terminalWebsocket);
+        this.term.write("$ ");
+        this.socket.onopen = this.socket_opened.bind(this);
+        this.socket.onmessage = this.socket_message.bind(this);
+        this.socket.onclose = this.socked_onclose.bind(this);
+        this.socket.onerror = this.socket_error.bind(this);
+        this.term.onKey(key => {
+          const char = key.key;
+          if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
+            this.socket.send(char);
           }
-        }
-      };
-      rawFile.send(null);
-      return code;
-    };
-
-    Blockly.Python["start_object_detector"] = function (block) {
-      //var code = Blockly.readPythonFile("/getPython" + "?file=start_object_detector.py")
-      //var code1 = code.toString().split("\n");
-      //console.log("Split code")
-      //code1.splice(6, 0, "\tcommand=\'rosrun kidbright_tpu tpu_detect.py\'");
-      //var text = code1.join("\n");
-      //console.log(this.$store.getters.getProjectDir )
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_feature' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu tpu_detect.py " +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["start_image_classification"] = function (block) {
-      //var code = Blockly.readPythonFile("/getPython" + "?file=start_object_detector.py")
-      //var code1 = code.toString().split("\n");
-      //console.log("Split code")
-      //code1.splice(6, 0, "\tcommand=\'rosrun kidbright_tpu tpu_detect.py\'");
-      //var text = code1.join("\n");
-      //console.log(this.$store.getters.getProjectDir )
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/image_class' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu tpu_classify.py " +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["start_wake_word_detector"] = function (block) {
-      //var code = Blockly.readPythonFile("/getPython" + "?file=start_object_detector.py")
-      //var code1 = code.toString().split("\n");
-      //console.log("Split code")
-      //code1.splice(6, 0, "\tcommand=\'rosrun kidbright_tpu tpu_detect.py\'");
-      //var text = code1.join("\n");
-      //console.log(this.$store.getters.getProjectDir )
-      var dur = this.$store.getters.getProjDescription
-      //console.log("==========> Duraion is =======>");
-      //console.log(dur.Duration*4);
-      var nf = dur.Duration*4
-      var cc =
-        "import rosnode\nimport subprocess\nimport time\nimport os\nros_nodes = rosnode.get_node_names()\nif not '/wake_class_wait' in ros_nodes:\n";
-      cc =
-        cc +
-        "\tcommand='rosrun kidbright_tpu wakeword_classify.py " +
-        "_terminate:=False "  +
-        "_model:=" +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "/audios/model.h5 " + 
-        "label_file:=" +
-        process.env.VUE_APP_ROOT +
-        "/" +
-        this.$store.getters.getProjectDir +
-        "/audios/label_map.pkl " +
-        "_nframe:=" + 
-        nf.toString() +
-        "'\n";
-      cc =
-        cc +
-        "\tprocess = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)\n\ttime.sleep(10) \n";
-
-      return cc;
-    }.bind(this);
-
-    Blockly.Python["init_ros_node"] = function (block) {
-      var code =
-        "from geometry_msgs.msg import Twist\nimport rospy\nimport time\nrospy.init_node('get_center', anonymous=True)\nvelocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=1)\nvel_msg = Twist()\n";
-
-      code =
-        code +
-        "import roslib\nimport rospy\nfrom kidbright_tpu.msg import tpu_object\nfrom kidbright_tpu.msg import tpu_objects\nfrom std_msgs.msg import String\n";
-      return code;
-    };
-
-    /*Blockly.Blocks['get_objects'] = {
-                init: function () {
-                    this.appendDummyInput()
-                        .appendField("Get objects");
-                    this.setOutput(true, null);
-                    this.setColour(230);
-                    this.setTooltip("");
-                    this.setHelpUrl("");
-                }
-            };*/
-
-    /*Blockly.Blocks["get_objects"] = {
-            init: function () {
-                this.appendValueInput("Objs").appendField("Get objects");
-
-                this.setPreviousStatement(true);
-                this.setNextStatement(true);
-
-                this.setColour(0);
-                this.setTooltip("");
-                this.setHelpUrl("");
-            },
-        };*/
-
-    Blockly.Blocks["get_objects"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get objects");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_classes"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get classes");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_sound"] = {
-      init: function () {
-        this.appendDummyInput().appendField("get sound");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["sumorobot_opponent"] = {
-      init: function () {
-        this.setColour("#0099E6");
-        this.appendDummyInput().appendField("opponent");
-        this.setOutput(true, "Boolean");
-      },
-    };
-
-    Blockly.Blocks["start_object_detector"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start object detector");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["start_image_classification"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start image classification");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["start_wake_word_detector"] = {
-      init: function () {
-        this.appendDummyInput().appendField("Start wake word detector");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["init_ros_node"] = {
-      init: function () {
-        this.appendDummyInput().appendField("ROS node initialization");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["rospy_loop"] = {
-      init: function () {
-        this.appendDummyInput().appendField("ROS LOOP");
-        this.appendStatementInput("DO")
-          .setCheck(null)
-          .setAlign(Blockly.ALIGN_RIGHT);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["get_object_attr"] = {
-      init: function () {
-        this.appendValueInput("VAR")
-          .setCheck(null)
-          .appendField("get")
-          .appendField(
-            new Blockly.FieldDropdown([
-              ["cx", "cx"],
-              ["cy", "cy"],
-              ["width", "width"],
-              ["height", "height"],
-              ["label", "label"],
-            ]),
-            "DATA_FIELD"
-          )
-          .appendField(" from");
-        this.setOutput(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["set_velocity"] = {
-      init: function () {
-        this.appendDummyInput().appendField("move with ");
-        this.appendDummyInput()
-          .appendField("linear velocity")
-          .appendField(new Blockly.FieldNumber(0), "LINEAR");
-        this.appendDummyInput()
-          .appendField("angular velocity")
-          .appendField(new Blockly.FieldNumber(0), "ANGULAR");
-        this.setInputsInline(true);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Blocks["delay"] = {
-      init: function () {
-        this.appendDummyInput().appendField("delay");
-        this.appendValueInput("NAME").setCheck(null);
-        this.setInputsInline(true);
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour(230);
-        this.setTooltip("");
-        this.setHelpUrl("");
-      },
-    };
-
-    Blockly.Python["set_velocity"] = function (block) {
-      var number_linear = block.getFieldValue("LINEAR");
-      var number_angular = block.getFieldValue("ANGULAR");
-      var code =
-        "vel_msg.linear.y = 0\nvel_msg.linear.z = 0\nvel_msg.angular.x = 0\nvel_msg.angular.y = 0\n";
-      code =
-        code +
-        "vel_msg.linear.x = " +
-        number_linear +
-        "\n" +
-        "vel_msg.angular.z = " +
-        number_angular +
-        "\n";
-      code = code + "velocity_publisher.publish(vel_msg)\n";
-
-      return code;
-    };
-
-    Blockly.Python["get_object_attr"] = function (block) {
-      var dropdown_data_field = block.getFieldValue("DATA_FIELD");
-      var value_var = Blockly.Python.valueToCode(
-        block,
-        "VAR",
-        Blockly.Python.ORDER_ATOMIC
-      );
-      // TODO: Assemble Python into code variable.
-      console.log(block.getFieldValue("DATA_FIELD"));
-      var code = value_var + "." + block.getFieldValue("DATA_FIELD");
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["rospy_loop"] = function (block) {
-      var statements_name = Blockly.Python.statementToCode(block, "NAME");
-      // TODO: Assemble Python into code variable.
-      var branch = Blockly.Python.statementToCode(block, "DO");
-      branch = Blockly.Python.addLoopTrap(branch, block) || Blockly.Python.PASS;
-      var code = "while not rospy.is_shutdown():\n" + branch;
-      return code;
-    };
-
-    /*Blockly.Python["get_objects"] = function (block) {
-            // TODO: Assemble Python into code variable.
-            var code = ""
-            //code = code + "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4)\n";
-            // TODO: Change ORDER_NONE to the correct strength.
-            //return [code, Blockly.Python.ORDER_NONE];
-
-            var varName = Blockly.Python.valueToCode(
-                block,
-                "Objs",
-                Blockly.Python.ORDER_ATOMIC
-            );
-
-            //var code = "";
-            //code += Blockly.readPythonFile("../blockly/generators/python/scripts/brain/get_laser.py");
-            return (
-                code +
-                varName +
-                " = rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects\n"
-            );
-        };*/
-
-    Blockly.Python["get_objects"] = function (block) {
-      var code =
-        "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["get_classes"] = function (block) {
-      // TODO: Assemble Python into code variable.
-      var code =
-        "rospy.wait_for_message('/tpu_objects', tpu_objects, timeout=4).tpu_objects";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["get_sound"] = function (block) {
-      // TODO: Assemble Python into code variable.
-      var code =
-        "rospy.wait_for_message('/inference', String, timeout=4).data";
-      // TODO: Change ORDER_NONE to the correct strength.
-      return [code, Blockly.Python.ORDER_NONE];
-    };
-
-    Blockly.Python["delay"] = function (block) {
-      var value_name = Blockly.Python.valueToCode(
-        block,
-        "NAME",
-        Blockly.Python.ORDER_ATOMIC
-      );
-      // TODO: Assemble Python into code variable.
-      var code = "time.sleep(" + value_name + ")\n";
-      return code;
-    };
-
-    setTimeout(() => {
-      //alert("Hello blockly")
-      var tt = {};
-      tt.toolbox = base_blocks;
-      tt.scrollbars = true;
-      tt.css = true;
-      tt.zoom = {
-        controls: true,
-        wheel: true,
-        startScale: 1.0,
-        maxScale: 4,
-        minScale: 0.25,
-        scaleSpeed: 1.1,
-      };
-
-      var blckDiv = this.$refs["blocklyDiv"];
-      this.blockly_woakspace = Blockly.inject(this.$refs["blocklyDiv"], tt);
-      //>>>>>>>>>>>> this.$store.commit("setBlocklyWorkspace", this.blockly_woakspace);
-      console.log("Injection running ***********************************");
-      //console.log(this.blockly_woakspace)
-      this.loaded = true;
-    }, 500);
-  },
-  created() {
-    this.unsubscribe = this.$store.subscribe((mutation, state) => {
-      if (mutation.type === "setBlocklyXml") {
-        setTimeout(() => {
-          console.log("updating xml !!!!!!!!!");
-          //console.log(state.blockly_xml)
-          this.blockly_xml = state.blockly_xml;
-          // console.log('blockly_xml == ',this.blockly_xml)
-          //this.blockly_woakspace = state.blockly_xml
-          this.blockly_woakspace.clear();
-          let textToDom = Blockly.Xml.textToDom(this.blockly_xml);
-          Blockly.Xml.domToWorkspace(this.blockly_woakspace, textToDom);
-        }, 500);
+        });
+      }catch(err){
+        this.term.write("ERROR : Cannot connect to server\r\n");
+        this.term.write(err.message+"\r\n");
       }
-    });
+    }
   },
-  beforeDestroy() {
-    this.unsubscribe();
-  },
+  beforeUnmount(){
+    this.socket.close();
+  }
 };
 </script>
 

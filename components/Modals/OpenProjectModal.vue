@@ -193,17 +193,6 @@ export default {
             projectJson.project.project.tfjs = "";
           }
           this.percentage = 96.0;
-          //----------- model h5 ---------// ? TODO: จำเป็นไหม
-          let modelH5 = this.files.find((el) => el.name == "model.ht");
-          if (modelH5) {
-            await this.addFileToFs({
-              projectId: projectId,
-              file: modelH5,
-            });
-          } else {
-            projectJson.project.project.pretrained = "";
-          }
-          this.percentage = 97.0;
           //----------- model edgetpu -------// ? TODO: จำเป็นไหม
           let modelEdgeTpu = this.files.find(
             (el) => el.name == "model_edgetpu.tflite"
@@ -278,10 +267,6 @@ export default {
               await this.addFileToFs({ projectId: projectId, file: file });
             }
           }
-          try{
-            let file = await this.getServerProjectFile(`model.h5`);
-            await this.addFileToFs({ projectId: projectId, file: file });
-          }catch{}
           try{
             let file = await this.getServerProjectFile(`labels.txt`);
             await this.addFileToFs({ projectId: projectId, file: file });
