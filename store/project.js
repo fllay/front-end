@@ -113,7 +113,7 @@ export const actions = {
   async fetchProjects({ commit, rootState }) {
     // fetch project
     try {
-      const res = await axios.get(rootState.serverUrl + "list_project");
+      const res = await axios.get(rootState.serverUrl + "/list_project");
       if (res && res.data.result && res.data.result == "OK") {
         console.log("project list = ");
         console.log(res.data.projects);

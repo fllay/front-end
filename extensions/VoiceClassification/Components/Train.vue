@@ -213,8 +213,12 @@ export default {
           {
             project_id: projectId,
             url: this.url,
+            model_file: "Classifier_best_val_accuracy"
           }
         );
+        if(serverDownloadModel && serverDownloadModel.data && serverDownloadModel.data.success === true){
+          this.$toast.success("ดาวน์โหลดข้อมูลสำเร็จ");
+        }
       }
       this.isDownloading = false;
     },

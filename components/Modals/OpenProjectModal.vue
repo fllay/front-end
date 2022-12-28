@@ -41,6 +41,7 @@
         </b-col>
       </b-row>
       <p class="p-notice-color small">* เลือกโฟลเดอร์ของโปรเจคที่ต้องการเปิด</p>
+      
     </div>
     <div v-if="step >= 2" class="text-center">
       <vm-progress
@@ -139,6 +140,13 @@ export default {
     async getServerFile(filename) {
       let fileContent = await axios.get(
         `${this.serverUrl}/projects/${this.projectToOpen}/raw_dataset/${filename}`,
+        { responseType: "blob" }
+      );
+      return new File([fileContent.data], filename);
+    },
+    async getServerProjectFile(filename) {
+      let fileContent = await axios.get(
+        `${this.serverUrl}/projects/${this.projectToOpen}/${filename}`,
         { responseType: "blob" }
       );
       return new File([fileContent.data], filename);
@@ -267,10 +275,21 @@ export default {
               await this.addFileToFs({ projectId: projectId, file: fileSound });
             } else {
               let file = await this.getServerFile(`${data.id}.${data.ext}`);
-              console.log(file);
               await this.addFileToFs({ projectId: projectId, file: file });
             }
           }
+          try{
+            let file = await this.getServerProjectFile(`model.h5`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
+          try{
+            let file = await this.getServerProjectFile(`labels.txt`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
+          try{
+            let file = await this.getServerProjectFile(`model_edgetpu.tflite`);
+            await this.addFileToFs({ projectId: projectId, file: file });
+          }catch{}
           this.restoreDataset(projectJson.dataset.dataset);
           this.setProject(projectJson.project.project); //assign new dataset
           this.step = 3;
