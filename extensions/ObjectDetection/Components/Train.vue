@@ -34,16 +34,18 @@
           class="btn base-btn"
           @click="downloadModel"
         >
-          <b-spinner v-if="isConverting || isDownloading" small></b-spinner>
-          {{
-            isConverting
-              ? "Converting..."
-              : isDownloading
-              ? "Download..."
-              : currentDevice == "ROBOT"
-              ? "Convert"
-              : "Download"
-          }}
+          <b-spinner v-if="isConverting" small></b-spinner>
+          <b-spinner v-else-if="isDownloading && currentDevice=='ROBOT'" small></b-spinner>
+          <vm-progress v-else-if="isDownloading && currentDevice=='BROWSER'"
+            type="circle"
+            :percentage="downloadProgress"
+            style="vertical-align: middle"
+            strokeColor="blue"
+            stroke-width="4"
+            :width="24"
+          >
+          </vm-progress>
+          {{progressText}}
         </b-button>
       </b-input-group-append>
     </b-input-group>
@@ -88,6 +90,9 @@ export default {
     return {
       file: null,
       isDownloading: false,
+      downloadProgress: 0,
+      downloadMaxFile : 3,
+      downloadIndex: 1
     };
   },
   methods: {
@@ -111,7 +116,11 @@ export default {
       try {
         let tempFile = await axios.get(url, {
           responseType: "blob",
+          onDownloadProgress : (pg)=>{
+            this.downloadProgress = Math.round((pg.loaded * 100) / pg.total);
+          },
         });
+        this.downloadProgress = 100;
         if (tempFile.status == 200) {
           return tempFile.data;
         }
@@ -131,6 +140,7 @@ export default {
       }
     },
     downloadTfjs: async function (projectId) {
+      this.downloadIndex += 1;
       let tfjsModelBasePath = `${this.url}/projects/${projectId}/output/tfjs`;
       let modelJson = await axios.get(`${tfjsModelBasePath}/model.json`);
       if (
@@ -138,7 +148,9 @@ export default {
         modelJson.data.weightsManifest &&
         modelJson.data.weightsManifest.length == 1
       ) {
+        this.downloadMaxFile += modelJson.data.weightsManifest[0].paths.length;
         for (let binFile of modelJson.data.weightsManifest[0].paths) {
+          this.downloadIndex += 1;
           await this.downloadAndSave(
             `${tfjsModelBasePath}/${binFile}`,
             binFile
@@ -155,6 +167,8 @@ export default {
       }
     },
     syncModelFile: async function(projectId){
+      this.downloadIndex = 1;
+      this.downloadMaxFile = 4;
       //============= download label =============//
       await this.downloadAndSave(
         `${this.url}/projects/${projectId}/output/labels.txt`,
@@ -165,6 +179,7 @@ export default {
         this.saveLabelFile(this.getBaseURL + "/labels.txt");
       }
       //============= download anchors ===========//
+      this.downloadIndex += 1;
       let anchorsText = await axios.get(
         `${this.url}/projects/${projectId}/output/anchors.txt`
       );
@@ -173,16 +188,8 @@ export default {
       this.saveAnchors(anchors);
       //============= download tfjs ==============//
       await this.downloadTfjs(projectId);
-      //============= download h5 model ============//
-      await this.downloadAndSave(
-        `${this.url}/projects/${projectId}/output/YOLO_best_mAP.h5`,
-        "model.h5"
-      );
-      let modelH5Entry = await this.exists(`${projectId}/model.h5`);
-      if (modelH5Entry.isFile === true) {
-        this.savePretrained(this.getBaseURL + "/model.h5");
-      }
       //============= download edgetpu =============//
+      this.downloadIndex += 1;
       await this.downloadAndSave(
         `${this.url}/projects/${projectId}/output/YOLO_best_mAP_edgetpu.tflite`,
         "model_edgetpu.tflite"
@@ -197,13 +204,12 @@ export default {
     downloadModel: async function () {
       let res = await this.convert_model();
       this.isDownloading = true;
-      //this.$toast.success("Convert Model Finished!");
       let projectId = this.$store.state.project.project.id;
       if (res && this.currentDevice == "BROWSER") {
         try {
           await this.syncModelFile(projectId);
           this.$toast.success(
-            "All model saved to project, save project to download all files"
+            "Download success, all models saved to your project"
           );
         } catch (err) {
           console.log("download model failed : ", err);
@@ -266,9 +272,19 @@ export default {
       "isConverting",
       "isConverted",
     ]),
-    downloadable: function () {
-      return this.isDone && !this.isDownloading;
-    },
+    progressText(){
+      if(this.isConverting){
+        return "Converting...";
+      }
+      if(this.isDownloading){
+        if(this.currentDevice == "BROWSER"){
+          return `Downloading (${this.downloadIndex}/${this.downloadMaxFile})`;
+        }else{
+          return `Downloading...`;
+        }
+      }
+      return "Download";
+    }
   },
 };
 </script>
@@ -298,7 +314,7 @@ $primary-color: #007e4e;
   color: white;
   margin-left: 10px !important;
   border-radius: 15px !important;
-  width: 150px;
+  min-width: 150px;
   &:disabled {
     opacity: 0.7;
   }
@@ -308,7 +324,7 @@ $primary-color: #007e4e;
   background-color: $primary-color;
   margin-left: 10px !important;
   border-radius: 15px !important;
-  width: 150px;
+  min-width: 150px;
   &:disabled {
     opacity: 0.7;
   }

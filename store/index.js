@@ -9,7 +9,7 @@ const robotIp =
   location.hostname.startsWith("10.0.");
 
 export const state = () => {
-  let hostname = "192.168.1.148"; //window.location.hostname;
+  let hostname = window.location.hostname; //"192.168.1.150";
   return {
     initialDevice: robotIp ? "ROBOT" : "BROWSER",
     currentDevice: robotIp ? "ROBOT" : "BROWSER", //BROWSER, ROBOT , should auto detect
@@ -121,13 +121,13 @@ export const actions = {
         }
       }
       commit("setSavingProgress", 96);
-      //---------- model h5 ----------//
-      if (rootState.project.project.pretrained) {
-        console.log("save model.h5");
-        let modelH5File = await dispatch("dataset/getDataAsFile", "model.h5");
-        zip.file("model.h5", modelH5File);
-      }
-      commit("setSavingProgress", 97);
+      // //---------- model h5 ----------//
+      // if (rootState.project.project.pretrained) {
+      //   console.log("save model.h5");
+      //   let modelH5File = await dispatch("dataset/getDataAsFile", "model.h5");
+      //   zip.file("model.h5", modelH5File);
+      // }
+      // commit("setSavingProgress", 97);
       //---------- model edge tpu --------//
       if (rootState.project.project.edgetpu) {
         let modelEdgeTpu = await dispatch(

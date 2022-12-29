@@ -37,6 +37,7 @@
         @click="$emit('close')"
       ></b-avatar>
     </div>
+    <slot></slot>
   </div>
 </template>
 <script>

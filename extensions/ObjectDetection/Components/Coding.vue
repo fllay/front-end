@@ -92,7 +92,7 @@ export default {
     };
   },
   methods: {
-    handleRun() {
+    handleRun : async function() {
       if (!this.isRunning) {
         this.isRunning = true;
         this.run();
@@ -137,7 +137,7 @@ export default {
       console.log(labels);
       return labels;
     },
-    async run() {
+    run: async function() {
       console.log("run!!!!");
       if(this.currentDevice == "BROWSER"){
         //========== load tfjs model ===========//

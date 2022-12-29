@@ -82,8 +82,6 @@ export default {
   },
   data() {
     return {
-      //toolbox: Toolbox,
-      //blocks: Blocks,
       socket: null,
       model: null,
       isRunning: false,
@@ -91,7 +89,7 @@ export default {
     };
   },
   methods: {
-    async handleRun() {
+    handleRun: async function() {
       if (!this.isRunning) {
         this.isRunning = true;
         await this.run();
@@ -136,7 +134,7 @@ export default {
       console.log(labels);
       return labels;
     },
-    async run() {
+    run : async function() {
       if(this.currentDevice == "BROWSER"){
         console.log("run!!!!");
         //========== load tfjs model ===========//
