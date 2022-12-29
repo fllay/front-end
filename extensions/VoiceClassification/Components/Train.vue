@@ -308,7 +308,7 @@ $primary-color: #007e4e;
   color: white;
   margin-left: 10px !important;
   border-radius: 15px !important;
-  width: 150px;
+  min-width: 150px;
   &:disabled {
     opacity: 0.7;
   }
@@ -318,7 +318,7 @@ $primary-color: #007e4e;
   background-color: $primary-color;
   margin-left: 10px !important;
   border-radius: 15px !important;
-  width: 150px;
+  min-width: 150px;
   &:disabled {
     opacity: 0.7;
   }

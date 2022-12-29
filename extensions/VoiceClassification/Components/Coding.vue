@@ -17,7 +17,9 @@
             :showController="false"
             :captureKey="false"
             :classify="result"
-          ></simulator-controller>
+          >
+            <continue-voice-capture ref="capture" @onImage="onImageReady"></continue-voice-capture>
+          </simulator-controller>
           <div v-else-if="currentDevice == 'ROBOT'" style="width: 40%; display: flex; align-items: center;">
             <img v-if="isRunning" style="width:100%" :src="`${streamUrl}?topic=/output/image_detected&type=ros_compressed`">
             <img v-else style="width:100%" :src="`${streamUrl}?topic=/output/image_raw&type=ros_compressed`">
@@ -74,11 +76,14 @@ import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
 import axios from "axios";
 
+import ContinueVoiceCapture from '~/components/InputConnection/ContinueVoiceCapture.vue';
+
 export default {
   name: "BlocklyComponent",
   components: {
     BlocklyCode,
     SimulatorController,
+    ContinueVoiceCapture
   },
   data() {
     return {
@@ -86,10 +91,15 @@ export default {
       model: null,
       isRunning: false,
       result: "",
+      image: null,
     };
   },
   methods: {
-    async handleRun() {
+    onImageReady: function(image){
+      this.image = image;
+    },
+    //==========================//
+    handleRun : async function() {
       if (!this.isRunning) {
         this.isRunning = true;
         await this.run();
@@ -134,8 +144,9 @@ export default {
       console.log(labels);
       return labels;
     },
-    async run() {
+    run : async function() {
       if(this.currentDevice == "BROWSER"){
+        this.term.write("Running ...\r\n");
         console.log("run!!!!");
         //========== load tfjs model ===========//
         this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("1");
@@ -144,7 +155,7 @@ export default {
           this.term.write("Running ...\\r\\n");
           ${code}
           this.isRunning = false;
-          this.result = "";
+          this.result = [];
           this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
           this.term.write("\\r\\nFinish\\r\\n");
         })();`;
@@ -154,6 +165,9 @@ export default {
         } catch (error) {
           console.log(error);
         }
+        //========== start voice capture ==========//
+        await this.$refs.capture.record();
+        //=========================================//
       }else if(this.currentDevice == "ROBOT"){
         try{
           let code = this.project.code;
@@ -168,8 +182,11 @@ export default {
     stop() {
       console.log("stop!!!");
       if(this.currentDevice == "BROWSER"){
+        //========== terminate continue voice =========//
+        this.$refs.capture.stopListening();
+        this.$refs.capture.endRecord();
         //========== load tfjs model ===========//
-        this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
+        //this.$refs.simulator.$refs.gameInstance.contentWindow.MSG_RunProgram("0");
       }else if(this.currentDevice == "ROBOT"){
         try{
           if(this.socket && this.socket.readyState !== WebSocket.CLOSED){
@@ -253,6 +270,8 @@ export default {
   },
   beforeUnmount(){
     this.socket.close();
+    this.$refs.capture.stopListening();
+    this.$refs.capture.endRecord();
   }
 };
 </script>

@@ -84,6 +84,7 @@ export default {
     onClose: async function(){
       this.terminated = true;
       this.cameraReady = false;
+      this.$refs.capture.stopListening();
       this.$refs.capture.endRecord();
     },
     sleep: function(ms) {
